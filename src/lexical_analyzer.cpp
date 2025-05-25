@@ -367,3 +367,9 @@ void LexicalAnalyzer::analyze() {
     }
 }
 
+void LexicalAnalyzer::print_tokens() {
+    printf("%-20s | %-20s | %s\n", "Lexeme", "TokenType", "(Line, Column)");
+    for (Token t : tokens) {
+        printf("%-20s | %-20s | (%d, %d)\n", t.lexeme.c_str(), t.str_type.c_str(), t.line, t.column);
+    }
+}

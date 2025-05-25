@@ -45,9 +45,9 @@ Symbol* SymbolTable::lookup(string lexeme) {
 
 void SymbolTable::print() {
     cout << "----- SYMBOL TABLE -----" << endl;
-    cout << "lexeme - Token Type - occurrences (line, column)" << endl;
+    printf("%-20s | %-20s | %s\n", "lexeme", "TokenType", "occurrences (line, column)");
     for (auto x : table) {
-        cout << x.first << " - " << x.second.str_type << " - ";
+        printf("%-20s | %-20s | ", x.first.c_str(), x.second.str_type.c_str());
         for (auto y: x.second.occorrences) {
             cout << "(" << y.first << ", " << y.second << ") ";
         }

@@ -36,10 +36,6 @@ int main() {
     symbol_table.print();
     cout << endl;
 
-    cout << "Lexeme - TokenType - Line - COlumn" << endl;
-    for (Token t : lexer.tokens) {
-        cout << t.lexeme << " - " << t.str_type << " - " << t.line << " - " << t.column << endl;
-    }
-
+    lexer.print_tokens();
     return 0;
 }
