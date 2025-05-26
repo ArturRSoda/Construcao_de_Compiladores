@@ -39,7 +39,7 @@ class LexicalAnalyzer {
 
     public:
         LexicalAnalyzer(SymbolTable* table, string string_input);
-        void analyze();
+        bool analyze();
         void print_tokens();
         vector<Token> tokens;
 };

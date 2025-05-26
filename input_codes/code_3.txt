@@ -1,0 +1,112 @@
+def inicializarEstoque() {
+    string[200] produtos = {};
+    int[200] quantidades = {};
+    int total = 0;
+    return {produtos, quantidades, total};
+}
+
+def cadastrarProduto(ref string[] produtos, ref int[] quantidades, ref int total, string nome, int qtd) {
+    produtos[total] = nome;
+    quantidades[total] = qtd;
+    total = total + 1;
+    print("Produto '" + nome + "' cadastrado com " + intToString(qtd) + " unidades.");
+}
+
+def adicionarEstoque(ref int[] quantidades, int id, int qtd) {
+    if(id >= 0) {
+        if (id < total) {
+            quantidades[id] = quantidades[id] + qtd;
+            print(intToString(qtd) + " unidades adicionadas ao produto ID " + intToString(id));
+            return true;
+        }
+    }
+    print("Erro: ID inválido.");
+    return false;
+}
+
+def removerEstoque(ref int[] quantidades, int id, int qtd) {
+    if(id >= 0) {
+        if (id < total) {
+            if(quantidades[id] >= qtd) {
+                quantidades[id] = quantidades[id] - qtd;
+                print(intToString(qtd) + " unidades removidas do produto ID " + intToString(id));
+                return true;
+            }
+            print("Erro: Estoque insuficiente.");
+            return false;
+        }
+    }
+    print("Erro: ID inválido.");
+    return false;
+}
+
+def buscarProdutoPorNome(string nome, string[] produtos, int total) {
+    for(int i = 0; i < total; i = i + 1) {
+        if(produtos[i] == nome) {
+            return i;
+        }
+    }
+    print("Erro: Produto não encontrado.");
+    return -1;
+}
+
+def gerarRelatorioEstoque(string[] produtos, int[] quantidades, int total) {
+    print("\n=== Relatório de Estoque ===");
+    for(int i = 0; i < total; i = i + 1) {
+        print("Produto: " + produtos[i] + " | Quantidade: " + intToString(quantidades[i]));
+    }
+}
+
+def alertaEstoqueBaixo(int[] quantidades, int limite) {
+    print("\n=== Alertas de Estoque Baixo ===");
+    for(int i = 0; i < total; i = i + 1) {
+        if(quantidades[i] < limite) {
+            print("ALERTA: Produto ID " + intToString(i) + " está com apenas " + intToString(quantidades[i]) + " unidades.");
+        }
+    }
+}
+
+def intToString(int n) {
+    if(n == 0) return "0";
+    string s = "";
+    int temp = n;
+    while(temp > 0) {
+        s = char((temp % 10) + 48) + s;
+        temp = temp / 10;
+    }
+    return s;
+}
+
+def char(int codigo) {
+    string s = " ";
+    s[0] = codigo;
+    return s;
+}
+
+def main() {
+    string[] produtos;
+    int[] quantidades;
+    int total;
+    {produtos, quantidades, total} = inicializarEstoque();
+
+    cadastrarProduto(produtos, quantidades, total, "Caneta", 100);
+    cadastrarProduto(produtos, quantidades, total, "Caderno", 50);
+    cadastrarProduto(produtos, quantidades, total, "Borracha", 200);
+
+    int produtoId = buscarProdutoPorNome("Caderno", produtos, total);
+    if(produtoId != -1) {
+        adicionarEstoque(quantidades, produtoId, 30);
+        removerEstoque(quantidades, produtoId, 15);
+    }
+
+    gerarRelatorioEstoque(produtos, quantidades, total);
+    alertaEstoqueBaixo(quantidades, 20);
+
+    break;
+}
+
+def testarSistema() {
+    print("Iniciando teste de estoque...");
+    main();
+    print("Teste concluído.");
+}

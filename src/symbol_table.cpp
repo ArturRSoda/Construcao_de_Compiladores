@@ -2,24 +2,31 @@
 
 using namespace std;
 
+// Construtor tabela de simbolos
 SymbolTable::SymbolTable() {
     id = 0;
 }
 
+
+// Verifica se um lexema ja existe na tabela
 bool SymbolTable::exists(string lexeme) {
     return table.find(lexeme) != table.end();
 }
 
+
+// Insere palavras-chave pre-definidas na tabela
 void SymbolTable::insertKeyWord(TokenType type, string str_type, string lexeme) {
     Symbol s = {
         type,
         str_type,
         lexeme,
-        {}
+        {}       // Lista de ocorrências vazia inicialmente
     };
     table[lexeme] = s;
 }
 
+
+// Insere um novo simbolo ou atualiza ocorrencias se ja existir
 void SymbolTable::insert(TokenType type, string str_type, string lexeme, int line, int column) {
     if (!exists(lexeme)) {
         Symbol s = {
@@ -35,6 +42,8 @@ void SymbolTable::insert(TokenType type, string str_type, string lexeme, int lin
     }
 }
 
+
+// Busca um simbolo na tabela e retorna seu ponteiro (nullptr se nao encontrado)
 Symbol* SymbolTable::lookup(string lexeme) {
     auto it = table.find(lexeme);
     if (it != table.end())
@@ -43,6 +52,8 @@ Symbol* SymbolTable::lookup(string lexeme) {
         return nullptr;
 }
 
+
+// Exibe a tabela de simbolos formatada
 void SymbolTable::print() {
     cout << "----- SYMBOL TABLE -----" << endl;
     printf("%-20s | %-20s | %s\n", "lexeme", "TokenType", "occurrences (line, column)");

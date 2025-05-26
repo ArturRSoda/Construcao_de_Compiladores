@@ -1,0 +1,128 @@
+def inicializarSistema() {
+    string[200] nomes = {};
+    float[200] notasMatematica = {};
+    float[200] notasCiencias = {};
+    int totalAlunos = 0;
+    return {nomes, notasMatematica, notasCiencias, totalAlunos};
+}
+
+def intToString(int n) {
+    if(n == 0) return "0";
+    string s = "";
+    int temp = n;
+    while(temp > 0) {
+        s = char((temp % 10) + 48) + s;
+        temp = temp / 10;
+    }
+    return s;
+}
+
+def floatToString(float valor) {
+    int parteInteira = valor;
+    float parteDecimal = valor - parteInteira;
+    string s = intToString(parteInteira) + "." + intToString(parteDecimal * 100);
+    return s;
+}
+
+def cadastrarAluno(ref string[] nomes, ref float[] notasMatematica, ref float[] notasCiencias, ref int total) {
+    string nome = "Aluno " + intToString(total + 1);
+    float notaMat = 6.0 + (total * 0.2);
+    float notaCien = 7.0 + (total * 0.1);
+    nomes[total] = nome;
+    notasMatematica[total] = notaMat;
+    notasCiencias[total] = notaCien;
+    total = total + 1;
+    print("Aluno " + nome + " cadastrado com notas: Matemática=" + floatToString(notaMat) + ", Ciências=" + floatToString(notaCien));
+}
+
+def calcularMediaTurma(float[] notas, int total) {
+    float soma = 0.0;
+    for(int i = 0; i < total; i = i + 1) {
+        soma = soma + notas[i];
+    }
+    return soma / total;
+}
+
+def calcularMediaIndividual(float nota1, float nota2) {
+    return (nota1 + nota2) / 2.0;
+}
+
+def buscarAlunoPorNome(string nome, string[] nomes, int total) {
+    for(int i = 0; i < total; i = i + 1) {
+        if(nomes[i] == nome) {
+            return i;
+        }
+    }
+    print("Erro: Aluno não encontrado.");
+    return 0;
+}
+
+def atualizarNota(ref float[] notas, int id, float novaNota) {
+    if(id >= 0) {
+        if (id < len(notas)) {
+            notas[id] = novaNota;
+            print("Nota atualizada para " + floatToString(novaNota));
+            return true;
+        }
+    }
+    print("Erro: ID inválido.");
+    return false;
+}
+
+def gerarRelatorioDetalhado(string[] nomes, float[] notasMatematica, float[] notasCiencias, int total) {
+    print("\n=== Relatório Detalhado da Turma ===");
+    for(int i = 0; i < total; i = i + 1) {
+        float media = calcularMediaIndividual(notasMatematica[i], notasCiencias[i]);
+        String situacao;
+        if (media >= 6.0) {
+            situacao = "Aprovado"
+        }
+        else {
+            situacao = "Reprovado"
+        }
+        print("Aluno: " + nomes[i] + 
+              " | Matemática: " + floatToString(notasMatematica[i]) +
+              " | Ciências: " + floatToString(notasCiencias[i]) +
+              " | Média: " + floatToString(media) +
+              " | Situação: " + situacao);
+    }
+}
+
+def char(int codigo) {
+    string s = " ";
+    s[0] = codigo;
+    return s;
+}
+
+def main() {
+    string[] nomes;
+    float[] notasMatematica;
+    float[] notasCiencias;
+    int totalAlunos;
+    {nomes, notasMatematica, notasCiencias, totalAlunos} = inicializarSistema();
+
+    for(int i = 0; i < 50; i = i + 1) {
+        cadastrarAluno(nomes, notasMatematica, notasCiencias, totalAlunos);
+    }
+
+    int alunoId = buscarAlunoPorNome("Aluno 25", nomes, totalAlunos);
+    if(alunoId != -1) {
+        atualizarNota(notasMatematica, alunoId, 8.5);
+        atualizarNota(notasCiencias, alunoId, 9.0);
+    }
+
+    float mediaGeralMatematica = calcularMediaTurma(notasMatematica, totalAlunos);
+    float mediaGeralCiencias = calcularMediaTurma(notasCiencias, totalAlunos);
+    print("\nMédia Geral - Matemática: " + floatToString(mediaGeralMatematica));
+    print("Média Geral - Ciências: " + floatToString(mediaGeralCiencias));
+
+    gerarRelatorioDetalhado(nomes, notasMatematica, notasCiencias, totalAlunos);
+
+    break;
+}
+
+def testeSistema() {
+    print("Iniciando teste do sistema...");
+    main();
+    print("Teste concluído.");
+}

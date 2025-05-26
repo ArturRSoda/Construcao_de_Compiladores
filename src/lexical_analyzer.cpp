@@ -3,18 +3,20 @@
 #include <cctype>
 #include <string>
 
+// Construtor analizador lexico
 LexicalAnalyzer::LexicalAnalyzer(SymbolTable* table, string string_input) {
     symbol_table = table;
     input = string_input;
-    lexeme_begin = 0;
-    line = 1;
-    column = 1;
-    tokens = {};
+    lexeme_begin = 0;     // Aponta para o inicio de um lexema
+    line = 1;             // Contador de linhas
+    column = 1;           // Contador de colunas
+    tokens = {};          // Lista de tokens identificados
 
-    initializeKeyWords();
+    initializeKeyWords(); // Insere palavras-chave na tabela de simbolos
 }
 
 
+// Exibe mensagens de erro lexico com detalhes de localizacao
 void LexicalAnalyzer::errorHandler(string message) {
     string spc1(message.length(), ' ');
     string spc2(to_string(line).length(), ' ');
@@ -26,6 +28,7 @@ void LexicalAnalyzer::errorHandler(string message) {
     cerr << "                 " << spc1    << "       " << spc2 << "         " << spc3   << "      ^" << endl;
 }
 
+// Insere palavras-chave pre-definidas na tabela de simbolos
 void LexicalAnalyzer::initializeKeyWords() {
     for (Symbol s : KEYWORDS_VECTOR) {
         symbol_table->insertKeyWord(s.type, s.str_type, s.symbol);
@@ -34,6 +37,7 @@ void LexicalAnalyzer::initializeKeyWords() {
 }
 
 
+// Atualiza lexeme_begin para a posição atual do forward (apos reconhecer um token)
 void LexicalAnalyzer::reachForward() {
     while (lexeme_begin < forward) {
         advanceLexemeBegin();
@@ -41,6 +45,7 @@ void LexicalAnalyzer::reachForward() {
 }
 
 
+// Avança o ponteiro lexeme_begin e atualiza linha/coluna
 void LexicalAnalyzer::advanceLexemeBegin() {
     char c = input[lexeme_begin];
     if (c == '\n') {
@@ -53,6 +58,7 @@ void LexicalAnalyzer::advanceLexemeBegin() {
 }
 
 
+// Adiciona um identificador a tabela de simbolos e retorna seu simbolo
 Symbol LexicalAnalyzer::addToSymbolTable() {
     string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
 
@@ -63,6 +69,7 @@ Symbol LexicalAnalyzer::addToSymbolTable() {
 }
 
 
+// Cria um token e o adiciona no vetor de tokens
 void LexicalAnalyzer::addToken(TokenType type, string str_type, string lexeme) {
     Token t = {
         type,
@@ -75,6 +82,7 @@ void LexicalAnalyzer::addToken(TokenType type, string str_type, string lexeme) {
 }
 
 
+// Automato para reconhecer identificadores (letras seguido de letras/dígitos)
 bool LexicalAnalyzer::getIdentifier() {
     int state = 0;
     forward = lexeme_begin;
@@ -106,6 +114,7 @@ bool LexicalAnalyzer::getIdentifier() {
 }
 
 
+// Automato para reconhecer numeros (inteiros ou floats)
 bool LexicalAnalyzer::getNumber() {
     int state = 0;
     forward = lexeme_begin;
@@ -123,7 +132,7 @@ bool LexicalAnalyzer::getNumber() {
 
             case 1: {
                 if (isdigit(c)) { state = 1; forward++; }
-                if (c == '.')   { state = 3; forward++; }
+                else if (c == '.')   { state = 3; forward++; }
                 else { state = 2; }
                 break;
             }
@@ -142,7 +151,7 @@ bool LexicalAnalyzer::getNumber() {
 
             case 4: {
                 string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
-                addToken(FLOAT_CONST, "INT_CONST", lexeme);
+                addToken(FLOAT_CONST, "FLOAT_CONST", lexeme);
                 return true;
             }
         }
@@ -150,6 +159,7 @@ bool LexicalAnalyzer::getNumber() {
 }
 
 
+// Automato para reconhecer strings (coisas entre "")
 bool LexicalAnalyzer::getString() {
     int state = 0;
     forward = lexeme_begin;
@@ -189,6 +199,8 @@ bool LexicalAnalyzer::getString() {
     }
 }
 
+
+// Automato para reconhecer operadores
 bool LexicalAnalyzer::getOperator() {
     int state = 0;
     forward = lexeme_begin;
@@ -204,46 +216,35 @@ bool LexicalAnalyzer::getOperator() {
                 else if (c == '*') { state = 1; forward++; }
                 else if (c == '/') { state = 1; forward++; }
                 else if (c == '%') { state = 1; forward++; }
-                else if (c == '<') { state = 2; forward++; }
-                else if (c == '>') { state = 2; forward++; }
-                else if (c == '=') { state = 3; forward++; }
-                else if (c == '!') { state = 3; forward++; }
+                else if (c == '<') { state = 3; forward++; }
+                else if (c == '>') { state = 3; forward++; }
+                else if (c == '=') { state = 4; forward++; }
+                else if (c == '!') { state = 4; forward++; }
                 else { return false; }
                 break;
             }
 
             case 1: {
-                if (c == ' ') {
-                    string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
-                    addToken(ARITH_OPER, "ARITH_OPER", lexeme);
-                    return true;
-                }
-                else {
-                    return false;
-                }
-                break;
+                string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
+                addToken(ARITH_OPER, "ARITH_OPER", lexeme);
+                return true;
             }
 
             case 2: {
-                if (c == ' ') {
-                    string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
-                    addToken(RELAT_OPER, "RELAT_OPER", lexeme);
-                    return true;
-                }
-                else if (c == '=') { state = 3; forward++; }
-                else { return false; }
-                break;
+                string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
+                addToken(RELAT_OPER, "RELAT_OPER", lexeme);
+                return true;
             }
 
             case 3: {
-                if (c == ' ') {
-                    string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
-                    addToken(RELAT_OPER, "RELAT_OPER", lexeme);
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                if (c == '=') forward++;
+                state = 2;
+                break;
+            }
+
+            case 4: {
+                if (c == '=') { state = 2; forward++; }
+                else { return false; }
                 break;
             }
         }
@@ -251,6 +252,7 @@ bool LexicalAnalyzer::getOperator() {
 }
 
 
+// Automato para reconhecer pontuacoes
 bool LexicalAnalyzer::getPonctuation() {
     int state = 0;
     forward = lexeme_begin;
@@ -331,6 +333,7 @@ bool LexicalAnalyzer::getPonctuation() {
     }
 }
 
+// Verifica se o lexeme_begin esta apontado para um espaco em branco
 bool LexicalAnalyzer::isWhiteSpace() {
     if (isspace(input[lexeme_begin])) {
         advanceLexemeBegin();
@@ -340,34 +343,30 @@ bool LexicalAnalyzer::isWhiteSpace() {
 }
 
 
-void LexicalAnalyzer::analyze() {
+// Funcao principal, executa a analise lexica
+bool LexicalAnalyzer::analyze() {
     while (lexeme_begin < input.length()-1) {
 
         while (isWhiteSpace()) continue;
 
-        if (getIdentifier()) {
-            reachForward();
-        }
-        else if (getNumber()) {
-            reachForward();
-        }
-        else if (getString()) {
-            reachForward();
-        }
-        else if (getOperator()) {
-            reachForward();
-        }
-        else if (getPonctuation()) {
-            reachForward();
-        }
+        if (getIdentifier()) { reachForward(); }
+        else if (getNumber()) { reachForward(); }
+        else if (getString()) { reachForward(); }
+        else if (getOperator()) { reachForward(); }
+        else if (getPonctuation()) { reachForward(); }
         else {
+            print_tokens();
             errorHandler("unrecognized symbol");
-            break;
+            return false;
         }
     }
+    return true;
 }
 
+
+// Exibe os tokens encontrados
 void LexicalAnalyzer::print_tokens() {
+    printf("----- Tokes -----\n");
     printf("%-20s | %-20s | %s\n", "Lexeme", "TokenType", "(Line, Column)");
     for (Token t : tokens) {
         printf("%-20s | %-20s | (%d, %d)\n", t.lexeme.c_str(), t.str_type.c_str(), t.line, t.column);

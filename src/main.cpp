@@ -22,20 +22,29 @@ string readInputCode(string input_file) {
     return buffer.str(); // return file contents as string
 }
 
-int main() {
-    string code = readInputCode("input_code.txt");
-    //string code = "break";
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        cerr << "Right Usage: " << argv[0] << " <input_file>\n";
+        return -1;
+    }
+    string code = readInputCode(argv[1]); 
+    if (code.empty()) {
+        cerr << "Error: No code to analyze.\n";
+        return -1;
+    }
 
     SymbolTable symbol_table;
 
-    LexicalAnalyzer lexer(&symbol_table, code);
-    lexer.analyze();
-
     cout << code << endl << endl;
+    LexicalAnalyzer lexer(&symbol_table, code);
+    if (!lexer.analyze()) {
+        return -1;
+    }
+
 
     symbol_table.print();
     cout << endl;
 
-    lexer.print_tokens();
+    //lexer.print_tokens();
     return 0;
 }
