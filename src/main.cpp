@@ -50,9 +50,9 @@ int main(int argc, char *argv[]) {
     syntaxer.computeAllFirst();
     syntaxer.computeFollow();
     syntaxer.buildParseTable();
-    syntaxer.printFirstSets();
-    syntaxer.printFollowSets();
-    //syntaxer.printParseTable();
+    //syntaxer.printFirstSets();
+    //syntaxer.printFollowSets();
+    syntaxer.printParseTable();
     if (syntaxer.parse()) return -1;
 
 
