@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <sstream>
 
 using namespace std;
 
@@ -38,7 +40,9 @@ enum TokenType {
     // ;
     SEMICOLON,
     // =
-    EQUAL
+    EQUAL,
+
+    END_OF_FILE
 };
 
 struct Token {
@@ -71,3 +75,8 @@ const vector<Symbol> KEYWORDS_VECTOR = {
     {KW_BREAK, "KW_BREAK", "break", {}},
     {KW_NULL, "KW_NULL", "null", {}}
 };
+
+
+string trim(string s);
+vector<string> split(string line);
+string getTerminalName(Token token);

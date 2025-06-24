@@ -371,4 +371,5 @@ void LexicalAnalyzer::print_tokens() {
     for (Token t : tokens) {
         printf("%-20s | %-20s | (%d, %d)\n", t.lexeme.c_str(), t.str_type.c_str(), t.line, t.column);
     }
+    cout << endl;
 }

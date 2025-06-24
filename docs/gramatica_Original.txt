@@ -1,8 +1,8 @@
 PROGRAM -> STATEMENT | FUNCLIST | ϵ
 FUNCLIST -> FUNCDEF FUNCLIST | FUNCDEF
-FUNCDEF -> def indent ( PARAMLIST ) { STATELIST }
+FUNCDEF -> def ident ( PARAMLIST ) { STATELIST }
 PARAMLIST -> int ident , PARAMLIST |  float ident , PARAMLIST |  string ident , PARAMLIST | int ident | float ident | string ident | ϵ
-STATEMENT -> VARDCL ; | ATRIBSTAT ; | PRINTSTAT ; | READSTAT ; | RETURNSTAT ; | IFSTAT | FORSTAT | { STATLIST } | break ; | ;
+STATEMENT -> VARDECL ; | ATRIBSTAT ; | PRINTSTAT ; | READSTAT ; | RETURNSTAT ; | IFSTAT | FORSTAT | { STATELIST } | break ; | ;
 VARDECL -> int ident NU | float ident NU | string ident NU
 NU -> [ int_constant ] NU | ϵ
 ATRIBSTAT -> LVALUE = EXPRESSION | LVALUE = ALLOCEXPRESSION | LVALUE = FUNCCALL
