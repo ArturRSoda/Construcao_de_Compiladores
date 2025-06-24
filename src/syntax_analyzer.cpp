@@ -128,7 +128,12 @@ void SyntaxAnalyzer::computeFollow() {
                     set<string> trailer;
                     bool epsilonFound = true;
                     for (size_t j = i + 1; j < production.size(); j++) {
-                        set<string> firstNext = computeFirst(production[j]);
+                        set<string> firstNext;
+                        if (nonTerminals.count(production[j])) 
+                            firstNext = firstSet[production[j]];
+                        else
+                            firstNext = { production[j] };
+
                         trailer.insert(firstNext.begin(), firstNext.end());
                         if (firstNext.find("ϵ") == firstNext.end()) {
                             epsilonFound = false;
@@ -175,7 +180,12 @@ void SyntaxAnalyzer::buildParseTable() {
             // Para cada simbolo da producao calcula o conjunto FIRST
             // E une com o conjunto First da cabeca
             for (string symbol : production) {
-                set<string> firstSym = computeFirst(symbol);
+                set<string> firstSym;
+                if (nonTerminals.count(symbol))
+                    firstSym = firstSet[ symbol ];
+                else
+                    firstSym = { symbol };
+
                 firstAlpha.insert(firstSym.begin(), firstSym.end());
                 if (firstSym.find("ϵ") == firstSym.end()) {
                     derivesEpsilon = false;
