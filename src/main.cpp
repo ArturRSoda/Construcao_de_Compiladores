@@ -66,19 +66,33 @@ ExprNode* createExprNodeIdent(Token token) {
     return new ExprNode{"ident", 0, 0, token, {}};
 }
 
-void dfs_print(ExprNode* node, int depth=0) {
+void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
     for (int i = 0; i < depth; i++) {
         cout << "-";
     }
-    if (node->type == "const" || node->type == "ident") {
+    if (node->type == "ident") {
+        #if 1
+        Symbol* symbol = symbol_table.lookup(node->token.lexeme);
+        string var_type = symbol->var_type;
+
+        if (var_type.size()) {
+            cout << node->type << ": " << var_type << " " << node->token.lexeme
+                << "\n";
+        } else {
+            cout << node->type << ": " << node->token.lexeme << "\n";
+        }
+        #else
+        cout << node->type << ": " << node->token.lexeme << "\n";
+        #endif
+    } else if (node->type == "const") {
         cout << node->type << ": " << node->token.lexeme << "\n";
     } else {
         cout << node->type << "\n";
         if (node->child1) {
-            dfs_print(node->child1, depth+1);
+            dfs_print(node->child1, symbol_table, depth+1);
         }
         if (node->child2) {
-            dfs_print(node->child2, depth+1);
+            dfs_print(node->child2, symbol_table, depth+1);
         }
     }
 }
@@ -226,29 +240,54 @@ vector<ExprNode*> createExprTrees(Node* tree) {
     return expr_trees;
 }
 
-string addTypesDfs(SymbolTable& symbol_table, Node* node, string& her) {
-    if (node->grammar_name == "VARDECL"
-        || node->grammar_name == "PARAMLIST"
-        || node->grammar_name == "STATELIST"
-        || node->grammar_name == "STATELIST'"
+string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
+    assert(node);
+
+    if (
+        (
+            node->grammar_name == "VARDECL"
+         || node->grammar_name == "STATELIST"
+         || node->grammar_name == "STATELIST'"
+        ) && node->children.size() && (
+            node->children[0]->grammar_name == "int"
+         || node->children[0]->grammar_name == "float"
+         || node->children[0]->grammar_name == "string"
+        )
     ) {
+        assert(node->children.size() >= 3);
         string sin = node->children[0]->grammar_name;
         sin = addTypesDfs(symbol_table, node->children[2], sin);
 
         Symbol* symbol = symbol_table.lookup(node->children[1]->token.lexeme);
         symbol->var_type = sin;
+    } else if (node->grammar_name == "PARAMLIST") {
+        if (!node->children.size()) {
+            return "";
+        }
+
+        string sin = node->children[0]->grammar_name;
+
+        Symbol* symbol = symbol_table.lookup(node->children[1]->token.lexeme);
+        symbol->var_type = sin;
+
+        for (Node* node : node->children) {
+            addTypesDfs(symbol_table, node, "");
+        }
     } else if (node->grammar_name == "NU") {
         if (!node->children.size()) {
             return her;
         }
 
+        assert(node->children.size() >= 4);
+
         Token token = node->children[1]->token;
         string sin = her;
-        sin += "[" + token + "]";
+        sin += "[" + token.lexeme + "]";
         addTypesDfs(symbol_table, node->children[3], sin);
+        return sin;
     } else {
         for (Node* node : node->children) {
-            addTypesDfs(symbol_table, node, 0);
+            addTypesDfs(symbol_table, node, "");
         }
     }
 
@@ -256,7 +295,7 @@ string addTypesDfs(SymbolTable& symbol_table, Node* node, string& her) {
 }
 
 void addTypes(SymbolTable& symbol_table, Node* tree) {
-    addTypesDfs(symbol_table, tree, 0);
+    addTypesDfs(symbol_table, tree, "");
 }
 
 int main(int argc, char *argv[]) {
@@ -303,7 +342,7 @@ int main(int argc, char *argv[]) {
     addTypes(symbol_table, tree);
 
     for (ExprNode* expr_tree : expr_trees) {
-        dfs_print(expr_tree);
+        dfs_print(expr_tree, symbol_table);
     }
 
     return 0;

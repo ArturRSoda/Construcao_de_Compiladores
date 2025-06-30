@@ -59,23 +59,23 @@ struct Symbol {
     string symbol;
     vector<pair<int, int>> occorrences;
 
-    string var_type = "";
+    string var_type;
 };
 
 const vector<Symbol> KEYWORDS_VECTOR = {
-    {KW_DEF, "KW_DEF", "def", {}},
-    {KW_INT, "KW_INT", "int", {}},
-    {KW_FLOAT, "KW_FLOAT", "float", {}},
-    {KW_STR, "KW_STR", "string", {}},
-    {KW_NEW, "KW_NEW", "new", {}},
-    {KW_PRINT, "KW_PRINT", "print", {}},
-    {KW_READ, "KW_READ", "read", {}},
-    {KW_RETURN, "KW_RETURN", "return", {}},
-    {KW_IF, "KW_IF", "if", {}},
-    {KW_ELSE, "KW_ELSE", "else", {}},
-    {KW_FOR, "KW_FOR", "for", {}},
-    {KW_BREAK, "KW_BREAK", "break", {}},
-    {KW_NULL, "KW_NULL", "null", {}}
+    {KW_DEF, "KW_DEF", "def", {}, ""},
+    {KW_INT, "KW_INT", "int", {}, ""},
+    {KW_FLOAT, "KW_FLOAT", "float", {}, ""},
+    {KW_STR, "KW_STR", "string", {}, ""},
+    {KW_NEW, "KW_NEW", "new", {}, ""},
+    {KW_PRINT, "KW_PRINT", "print", {}, ""},
+    {KW_READ, "KW_READ", "read", {}, ""},
+    {KW_RETURN, "KW_RETURN", "return", {}, ""},
+    {KW_IF, "KW_IF", "if", {}, ""},
+    {KW_ELSE, "KW_ELSE", "else", {}, ""},
+    {KW_FOR, "KW_FOR", "for", {}, ""},
+    {KW_BREAK, "KW_BREAK", "break", {}, ""},
+    {KW_NULL, "KW_NULL", "null", {}, ""}
 };
 
 
