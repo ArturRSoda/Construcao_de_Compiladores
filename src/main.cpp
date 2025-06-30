@@ -288,7 +288,7 @@ string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
         Token token = node->children[1]->token;
         string sin = her;
         sin += "[" + token.lexeme + "]";
-        addTypesDfs(symbol_table, node->children[3], sin);
+        sin = addTypesDfs(symbol_table, node->children[3], sin);
         return sin;
     } else {
         for (Node* node : node->children) {
@@ -306,7 +306,15 @@ void addTypes(SymbolTable& symbol_table, Node* tree) {
 string checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) {
     if (node->type == "ident") {
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
-        return symbol->var_type;
+        
+        string type = symbol->var_type;
+        int i = 0;
+        for (; i < (int)type.size(); i++) {
+            if (type[i] == '[') break;
+        }
+        type.resize(i);
+
+        return type;
     } else if (node->type == "const") {
         if (node->token.type == INT_CONST)         return "int";
         else if (node->token.type == FLOAT_CONST)  return "float";
@@ -510,13 +518,13 @@ int main(int argc, char *argv[]) {
     vector<ExprNode*> expr_trees = createExprTrees(tree);
     addTypes(symbol_table, tree);
 
-    //for (ExprNode* expr_tree : expr_trees) {
-    //    bool success = checkTypes(symbol_table, expr_tree);
-    //    assert(success);
-    //}
+    for (ExprNode* expr_tree : expr_trees) {
+        bool success = checkTypes(symbol_table, expr_tree);
+        assert(success);
+    }
 
-    //bool success = checkScope(tree);
-    //assert(success);
+    bool success = checkScope(tree);
+    assert(success);
 
     cout << "Tree:\n";
     dfs_print(tree);
