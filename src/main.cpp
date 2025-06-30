@@ -71,7 +71,6 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
         cout << "-";
     }
     if (node->type == "ident") {
-        #if 1
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
         string var_type = symbol->var_type;
 
@@ -81,11 +80,22 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
         } else {
             cout << node->type << ": " << node->token.lexeme << "\n";
         }
-        #else
-        cout << node->type << ": " << node->token.lexeme << "\n";
-        #endif
     } else if (node->type == "const") {
-        cout << node->type << ": " << node->token.lexeme << "\n";
+        string s;
+        switch (node->token.type) {
+        case INT_CONST: {
+            s = "int";
+        } break;
+        case FLOAT_CONST: {
+            s = "float";
+        } break;
+        case STRING_CONST: {
+            s = "string";
+        } break;
+        default: {
+        } break;
+        }
+        cout << node->type << ": " << s << " " << node->token.lexeme << "\n";
     } else {
         cout << node->type << "\n";
         if (node->child1) {
@@ -298,6 +308,36 @@ void addTypes(SymbolTable& symbol_table, Node* tree) {
     addTypesDfs(symbol_table, tree, "");
 }
 
+string checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) {
+    if (node->type == "ident") {
+        Symbol* symbol = symbol_table.lookup(node->token.lexeme);
+        return symbol->var_type;
+    } else if (node->type == "const") {
+        if (node->token.type == INT_CONST)         return "int";
+        else if (node->token.type == FLOAT_CONST)  return "float";
+        else if (node->token.type == STRING_CONST) return "null";
+        else                                       assert(false);
+    } else {
+        if (node->child1 && node->child2) {
+            string type1 = checkTypesDfs(symbol_table, node->child1, success);
+            string type2 = checkTypesDfs(symbol_table, node->child2, success);
+            if (type1 != type2) {
+                success = false;
+                return "";
+            }
+            return type1;
+        } else {
+            return checkTypesDfs(symbol_table, node->child1, success);
+        }
+    }
+}
+
+bool checkTypes(SymbolTable& symbol_table, ExprNode* tree) {
+    bool success = true;
+    checkTypesDfs(symbol_table, tree, success);
+    return success;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         cerr << "Right Usage: " << argv[0] << " <input_file>\n";
@@ -340,6 +380,11 @@ int main(int argc, char *argv[]) {
 
     vector<ExprNode*> expr_trees = createExprTrees(tree);
     addTypes(symbol_table, tree);
+
+    for (ExprNode* expr_tree : expr_trees) {
+        bool success = checkTypes(symbol_table, expr_tree);
+        assert(success);
+    }
 
     for (ExprNode* expr_tree : expr_trees) {
         dfs_print(expr_tree, symbol_table);

@@ -144,7 +144,7 @@ bool LexicalAnalyzer::getNumber() {
             }
 
             case 3: {
-                if (isdigit(c)) { state = 1; forward++; }
+                if (isdigit(c)) { state = 5; forward++; }
                 else { state = 4; }
                 break;
             }
@@ -153,6 +153,12 @@ bool LexicalAnalyzer::getNumber() {
                 string lexeme = input.substr(lexeme_begin, forward-lexeme_begin);
                 addToken(FLOAT_CONST, "FLOAT_CONST", lexeme);
                 return true;
+            }
+
+            case 5: {
+                if (isdigit(c)) { state = 5; forward++; }
+                else { state = 4; }
+                break;
             }
         }
     }
