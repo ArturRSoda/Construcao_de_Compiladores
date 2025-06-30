@@ -58,6 +58,8 @@ struct Symbol {
     string str_type;
     string symbol;
     vector<pair<int, int>> occorrences;
+
+    string var_type = "";
 };
 
 const vector<Symbol> KEYWORDS_VECTOR = {

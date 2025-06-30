@@ -1,5 +1,7 @@
 #include "include/syntax_analyzer.hpp"
 
+#include <memory>
+
 using namespace std;
 
 SyntaxAnalyzer::SyntaxAnalyzer(vector<Token> v) {
@@ -231,34 +233,54 @@ void SyntaxAnalyzer::advanceToken() {
         currentTokenIndex++;
 }
 
+Node* make_partial_node(string grammar_name, Node* parent) {
+    return new Node{grammar_name, {}, parent, {}};
+}
+
 // Parse os tokens da lista de tokens do analizador lexico
-bool SyntaxAnalyzer::parse() {
+Node* SyntaxAnalyzer::parse() {
     // Inicializa a pilha
-    stack<string> stk;
-    stk.push("$");
-    stk.push(startSymbol);
+    vector<string> stk;
+    stk.push_back("$");
+    stk.push_back(startSymbol);
+
+    Node* tree = make_partial_node(startSymbol, 0);
+    Node* node = tree;
 
     // Continua olhando para a pilha enquanto nao vazia
     while (!stk.empty()) {
         // Get o topo da pilha e o token apontado
-        string top = stk.top();
+
+        //cout << "Pilha: {";
+        //for (string& s : stk) {
+        //    cout << "\"" << s << "\" ";
+        //}
+        //cout << "}\n";
+
+        string top = stk.back();
         Token token = getCurrentToken();
         string currentSymbol = getTerminalName(token);
 
-        stk.pop();
+        stk.pop_back();
+
+        bool pushed_to_stack = false;
 
         // Se chegar ao fundo da pilha e acabar os tokens de entrada -> sucesso
         if (top == "$" && currentSymbol == "$") {
             cout << "Parsing successful!" << endl;
-            return true;
+            return tree;
         }
         // Se o topo da pilha for terminal
         else if (!nonTerminals.count(top)) {
             if (top == currentSymbol) {
                 advanceToken();
+
+                node->token = token;
+
+                //node->children.push_back(new Node{token.lexeme, node, {}});
             } else {
                 cout << "Syntax error at line " << token.line << ", column " << token.column << ": expected '" << top << "', got '" << currentSymbol << "'" << endl;
-                return false;
+                return 0;
             }
         }
         // Se o topo da pilha for nao-terminal
@@ -266,19 +288,54 @@ bool SyntaxAnalyzer::parse() {
             if (parseTable[top].count(currentSymbol)) {
                 auto production = parseTable[top][currentSymbol];
                 auto it = production.rbegin();
+
                 while (it != production.rend()) {
-                    if (*it != "ϵ")
-                        stk.push(*it);
+                    if (*it != "ϵ") {
+                        stk.push_back(*it);
+                        pushed_to_stack = true;
+                    }
                     ++it;
+                }
+                for (string& s : production) {
+                    if (s != "ϵ") {
+                        node->children.push_back(make_partial_node(s, node));
+                    }
+                }
+                
+                if (node->children.size()) {
+                    node = node->children[0];
                 }
             } else {
                 cout << "Syntax error at line " << token.line << ", column " << token.column << ": no rule for '" << top << "' with lookahead '" << currentSymbol << "'" << endl;
-                return false;
+                return 0;
+            }
+        }
+
+        if (!pushed_to_stack) {
+            Node* prev = 0;
+            while (true) {
+                if (!node) break;
+
+                int i = 0;
+                for (; i < (int)node->children.size(); i++) {
+                    if (node->children[i] == prev) {
+                        break;
+                    }
+                }
+                bool more_child = (i+1 < (int)node->children.size());
+
+                if (more_child) {
+                    node = node->children[i+1];
+                    break;
+                }
+
+                prev = node;
+                node = node->parent;
             }
         }
     }
 
-    return false;
+    return 0;
 }
 
 

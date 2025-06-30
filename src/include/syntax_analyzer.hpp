@@ -13,6 +13,14 @@
 
 using namespace std;
 
+struct Node {
+    string grammar_name;
+    Token token;
+
+    Node* parent;
+    vector<Node*> children;
+};
+
 class SyntaxAnalyzer {
     private:
         map<string, vector<vector<string>>> grammar;
@@ -42,5 +50,5 @@ class SyntaxAnalyzer {
         void computeAllFirst();
         void computeFollow();
         void buildParseTable();
-        bool parse();
+        Node* parse();
 };
