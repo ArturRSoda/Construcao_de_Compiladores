@@ -212,6 +212,12 @@ ExprNode* createExprTreesDfs(
             sin = createExprTreesDfs(node->children[4], expr_trees, 0);
             expr_trees.push_back(sin);
         } else if (node->children[0]->grammar_name == "ident") {
+            if (   node->children[1]->children.size()
+                && node->children[1]->children[0]->grammar_name != "NC"
+            ) {
+                return 0;
+            }
+
             ExprNode* sin;
             Token token = node->children[0]->token;
             sin = createExprNodeIdent(token);
@@ -233,7 +239,9 @@ ExprNode* createExprTreesDfs(
             sin = createExprTreesDfs(node->children[2], expr_trees, her);
             return sin;
         } else {
-            assert(false);
+            for (Node* child : node->children) {
+                createExprTreesDfs(child, expr_trees, 0);
+            }
         }
     } else {
         for (Node* child : node->children) {
@@ -270,6 +278,10 @@ string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
 
         Symbol* symbol = symbol_table.lookup(node->children[1]->token.lexeme);
         symbol->var_type = sin;
+
+        for (Node* node : node->children) {
+            addTypesDfs(symbol_table, node, "");
+        }
     } else if (node->grammar_name == "PARAMLIST") {
         if (!node->children.size()) {
             return "";
@@ -338,6 +350,140 @@ bool checkTypes(SymbolTable& symbol_table, ExprNode* tree) {
     return success;
 }
 
+bool checkScopeDfs(
+    Node* node,
+    vector<vector<string>>& scope,
+    int loop_count
+) {
+    for (Node* child : node->children) {
+        /* Creating new scope */ {
+            bool may_create_scope = 
+                   node->grammar_name == "FUNCDEF"
+                || node->grammar_name == "FUNCLIST'"
+                || node->grammar_name == "STATEMENT"
+                || node->grammar_name == "STATELIST"
+                || node->grammar_name == "STATELIST'";
+
+            if (may_create_scope) {
+                bool func_push_back = 
+                    (
+                        node->grammar_name == "FUNCDEF"
+                     || node->grammar_name == "FUNCLIST'"
+                    ) && child->grammar_name == "(";
+
+                bool stat_push_back =
+                    (
+                        node->grammar_name == "STATEMENT"
+                     || node->grammar_name == "STATELIST"
+                     || node->grammar_name == "STATELIST'"
+                    ) && child->grammar_name == "{";
+
+                bool do_push_back = func_push_back || stat_push_back;
+                bool do_pop_back = child->grammar_name == "}";
+
+                if (do_push_back) {
+                    scope.push_back({});
+                } else if (do_pop_back) {
+                    scope.pop_back();
+                }
+            }
+        }
+
+        /* Declaring new ident */ {
+            bool declaring_new_ident = 
+                (
+                    node->grammar_name == "FUNCDEF"
+                 || node->grammar_name == "PARAMLIST"
+                 || node->grammar_name == "VARDECL"
+                 || node->grammar_name == "PARAMLISTCALL"
+                 || node->grammar_name == "STATELIST"
+                 || node->grammar_name == "FUNCLIST'"
+                 || node->grammar_name == "STATELIST'"
+                )
+                && node->children[0]->grammar_name != "ident"
+                && child->grammar_name == "ident";
+
+            if (declaring_new_ident) {
+                string ident = child->token.lexeme;
+
+                vector<string>& last_scope = scope.back();
+
+                bool found_in_scope =
+                    find(
+                        last_scope.begin(), last_scope.end(),
+                        ident
+                    )
+                    != last_scope.end();
+
+                if (found_in_scope) {
+                    return false;
+                }
+
+                last_scope.push_back(ident);
+            }
+        }
+
+        /* Using ident */ {
+            bool using_ident = (
+                     node->grammar_name == "FUNCCALL"
+                  || node->grammar_name == "PARAMLISTCALL"
+                  || node->grammar_name == "LVALUE"
+                  || node->grammar_name == "ATRIBSTAT'"
+                  || node->grammar_name == "STATELIST'"
+                )
+                && child->grammar_name == "ident";
+
+            if (using_ident) {
+                string ident = child->token.lexeme;
+
+                bool found = false;
+                for (vector<string>& specific_scope : scope) {
+                    for (string& decl_ident : specific_scope) {
+                        if (decl_ident == ident) found = true;
+                    }
+                }
+
+                if (!found) return false;
+            }
+        }
+
+        /* Check break */ {
+            if (child->grammar_name == "break") {
+                if (loop_count == 0) return false;
+            }
+        }
+
+        bool in_for_body = false;
+
+        /* Entering new for */ {
+            bool entering_new_for = (
+                    node->grammar_name == "FORSTAT"
+                 || node->grammar_name == "STATELIST"
+                 || node->grammar_name == "STATELIST'"
+                )
+                && node->children.size()
+                && node->children[0]->grammar_name == "for";
+
+            in_for_body = entering_new_for && child->grammar_name == "STATEMENT";
+        }
+
+        if (in_for_body) loop_count++;
+
+        if (!checkScopeDfs(child, scope, loop_count)) {
+            return false;
+        }
+
+        if (in_for_body) loop_count--;
+    }
+
+    return true;
+}
+
+bool checkScope(Node* tree) {
+    vector<vector<string>> scope{vector<string>()};
+    return checkScopeDfs(tree, scope, 0);
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         cerr << "Right Usage: " << argv[0] << " <input_file>\n";
@@ -386,9 +532,17 @@ int main(int argc, char *argv[]) {
         assert(success);
     }
 
+    cout << "Tree:\n";
+    dfs_print(tree);
+
+    cout << "\nExprTree:\n";
     for (ExprNode* expr_tree : expr_trees) {
         dfs_print(expr_tree, symbol_table);
+        cout << "\n";
     }
+
+    bool success = checkScope(tree);
+    assert(success);
 
     return 0;
 }
