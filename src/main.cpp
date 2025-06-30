@@ -42,28 +42,26 @@ void dfs_print(Node* node, int depth=0) {
 
 struct ExprNode {
     string type;
+    Token token;
 
     // Operator type
     ExprNode* child1;
     ExprNode* child2;
 
-    // Const & Ident type
-    Token token;
-
     // Ident type
     vector<ExprNode*> array_indices;
 };
 
-ExprNode* createExprNodeOper(string type, ExprNode* child1, ExprNode* child2) {
-    return new ExprNode{type, child1, child2};
+ExprNode* createExprNodeOper(Token token, ExprNode* child1, ExprNode* child2) {
+    return new ExprNode{"oper", token, child1, child2};
 }
 
 ExprNode* createExprNodeConst(Token token) {
-    return new ExprNode{"const", 0, 0, token};
+    return new ExprNode{"const", token};
 }
 
 ExprNode* createExprNodeIdent(Token token) {
-    return new ExprNode{"ident", 0, 0, token, {}};
+    return new ExprNode{"ident", token};
 }
 
 void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
@@ -75,8 +73,15 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
         string var_type = symbol->var_type;
 
         if (var_type.size()) {
-            cout << node->type << ": " << var_type << " " << node->token.lexeme
-                << "\n";
+            cout << node->type << ": " << var_type << " " << node->token.lexeme;
+
+            for (ExprNode* index_node : node->array_indices) {
+                cout << "[";
+                cout << index_node->token.lexeme;
+                cout << "]";
+            }
+
+            cout << "\n";
         } else {
             cout << node->type << ": " << node->token.lexeme << "\n";
         }
@@ -97,7 +102,7 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
         }
         cout << node->type << ": " << s << " " << node->token.lexeme << "\n";
     } else {
-        cout << node->type << "\n";
+        cout << node->token.lexeme << "\n";
         if (node->child1) {
             dfs_print(node->child1, symbol_table, depth+1);
         }
@@ -112,144 +117,122 @@ ExprNode* createExprTreesDfs(
     vector<ExprNode*>& expr_trees,
     ExprNode* her
 ) {
-    auto way1 = [&]() {
-        ExprNode* sin;
-        sin = createExprTreesDfs(node->children[0], expr_trees, 0);
-        sin = createExprTreesDfs(node->children[1], expr_trees, sin);
-        return sin;
-    };
+    bool in_arithm_atribstat1 =
+        node->grammar_name == "ATRIBSTAT'"
+     && node->children[0]->grammar_name != "new"
+     && node->children[1]->grammar_name != "PARAMLISTCALL";
 
-    auto way2 = [&]() {
-        if (!node->children.size()) {
-            return her;
-        }
+    bool in_arithm_atribstat2 =
+        node->grammar_name == "ATRIBSTAT''"
+     && (
+            !node->children.size()
+         || node->children[1]->grammar_name != "PARAMLISTCALL"
+        );
 
-        string symbol = node->children[0]->grammar_name;
+    bool one_oper =
+        node->grammar_name == "UNARYEXPR";
 
-        ExprNode* sin;
-        sin = createExprTreesDfs(node->children[0], expr_trees, 0);
-        sin = createExprTreesDfs(node->children[1], expr_trees, sin);
-        sin = createExprNodeOper(symbol, her, sin);
-        sin = createExprTreesDfs(node->children[2], expr_trees, sin);
-        return sin;
-    };
+    bool two_oper =
+        node->grammar_name == "NT"
+     || node->grammar_name == "NQ"
+     || node->grammar_name == "EXPRESSION'";
 
-    if (node->grammar_name == "EXPRESSION") {
-        ExprNode* sin;
-        sin = createExprTreesDfs(node->children[0], expr_trees, 0);
-        expr_trees.push_back(sin);
-    } else if (node->grammar_name == "NUMEXPRESSION") {
-        return way1();
-    } else if (node->grammar_name == "NT") {
-        return way2();
-    } else if (node->grammar_name == "TERM") {
-        return way1();
-    } else if (node->grammar_name == "NQ") {
-        return way2();
-    } else if (node->grammar_name == "UNARYEXPR") {
-        ExprNode* sin;
-        sin = createExprTreesDfs(node->children[0], expr_trees, 0);
-        if (node->children[0]->grammar_name == "FACTOR") {
-            return sin;
-        } else {
+    bool nc =
+        node->grammar_name == "NC";
+
+    bool forward =
+        node->grammar_name == "EXPRESSION"
+     || node->grammar_name == "NUMEXPRESSION"
+     || node->grammar_name == "TERM"
+     || node->grammar_name == "FACTOR"
+     || node->grammar_name == "LVALUE"
+     || in_arithm_atribstat1
+     || in_arithm_atribstat2;
+
+    bool do_push =
+        node->grammar_name == "EXPRESSION"
+     || in_arithm_atribstat1;
+
+    assert(do_push ? forward : true);
+
+    bool in_arithm_node = one_oper || two_oper || nc || forward;
+
+    if (in_arithm_node && !forward) {
+        if (one_oper) {
+            if (node->children.size() == 1) {
+                return createExprTreesDfs(node->children[0], expr_trees, her);
+            } else {
+                ExprNode* sin = createExprTreesDfs(
+                    node->children[1], expr_trees, 0);
+
+                string symbol = node->children[0]->grammar_name;
+
+                return createExprNodeOper(node->children[0]->token, sin, 0);
+            }
+        } else if (two_oper) {
+            if (!node->children.size()) return her;
+
             string symbol = node->children[0]->grammar_name;
-            return createExprNodeOper(symbol, sin, 0);
-        }
-    } else if (node->grammar_name == "FACTOR") {
-        string type = node->children[0]->grammar_name;
-        if (type == "LVALUE") {
-            return createExprTreesDfs(node->children[0], expr_trees, 0);
-        } else if (type == "(") {
-            ExprNode* sin;
 
-            sin = createExprTreesDfs(node->children[1], expr_trees, 0);
+            ExprNode* sin = createExprTreesDfs(
+                node->children[1], expr_trees, 0);
 
-            return sin;
-        } else {
-            return createExprNodeConst(node->children[0]->token);
-        }
-    } else if (node->grammar_name == "LVALUE") {
-        ExprNode* sin;
-        sin = createExprNodeIdent(node->children[0]->token);
-        return createExprTreesDfs(node->children[1], expr_trees, sin);
-    } else if (node->grammar_name == "NC") {
-        ExprNode* sin;
-        if (node->children.size()) {
-            sin = createExprTreesDfs(node->children[1], expr_trees, 0);
+            sin = createExprNodeOper(node->children[0]->token, her, sin);
 
-            her->array_indices.push_back(sin);
-
-            return createExprTreesDfs(node->children[3], expr_trees, sin);
-        } else {
-            return her;
-        }
-    } else if (node->grammar_name == "ATRIBSTAT'") {
-        if (   node->children[0]->grammar_name == "int_constant"
-            || node->children[0]->grammar_name == "float_constant"
-            || node->children[0]->grammar_name == "string_constant"
-            || node->children[0]->grammar_name == "null"
-        ) {
-            Token token = node->children[0]->token;
-            ExprNode* sin = createExprNodeConst(token);
-            sin = createExprTreesDfs(node->children[1], expr_trees, sin);
-            sin = createExprTreesDfs(node->children[2], expr_trees, sin);
-            expr_trees.push_back(sin);
-        } else if (node->children[0]->grammar_name == "(") {
-            ExprNode* sin;
-            sin = createExprTreesDfs(node->children[1], expr_trees, 0);
-            sin = createExprTreesDfs(node->children[3], expr_trees, 0);
-            sin = createExprTreesDfs(node->children[4], expr_trees, 0);
-            expr_trees.push_back(sin);
-        } else if (node->children[0]->grammar_name == "+"
-                || node->children[0]->grammar_name == "-") {
-            ExprNode* sin;
-            sin = createExprTreesDfs(node->children[1], expr_trees, 0);
-
-            string oper = node->children[0]->grammar_name;
-            sin = createExprNodeOper(oper, sin, 0);
-
-            sin = createExprTreesDfs(node->children[3], expr_trees, 0);
-            sin = createExprTreesDfs(node->children[4], expr_trees, 0);
-            expr_trees.push_back(sin);
-        } else if (node->children[0]->grammar_name == "ident") {
-            if (   node->children[1]->children.size()
-                && node->children[1]->children[0]->grammar_name != "NC"
-            ) {
-                return 0;
+            if (node->children.size() >= 3) {
+                sin = createExprTreesDfs(node->children[2], expr_trees, sin);
             }
 
-            ExprNode* sin;
-            Token token = node->children[0]->token;
-            sin = createExprNodeIdent(token);
+            return sin;
+        } else if (nc) {
+            if (node->children.size()) {
+                ExprNode* sin = createExprTreesDfs(
+                    node->children[1], expr_trees, 0);
 
-            sin = createExprTreesDfs(node->children[1], expr_trees, sin);
-            expr_trees.push_back(sin);
+                her->array_indices.push_back(sin);
+
+                sin = her;
+
+                return createExprTreesDfs(node->children[3], expr_trees, sin);
+            } else {
+                return her;
+            }
         } else {
             assert(false);
         }
-    } else if (node->grammar_name == "ATRIBSTAT''") {
-        if (!node->children.size()) {
-            return her;
+    } else {
+        bool is_const =
+            node->grammar_name == "int_constant"
+         || node->grammar_name == "float_constant"
+         || node->grammar_name == "string_constant"
+         || node->grammar_name == "null";
+
+        bool is_ident =
+            node->grammar_name == "ident";
+
+        if (is_const) {
+            return createExprNodeConst(node->token);
+        } else if (is_ident) {
+            return createExprNodeIdent(node->token);
         }
 
-        if (node->children[0]->grammar_name == "NC") {
-            ExprNode* sin;
-            sin = createExprTreesDfs(node->children[0], expr_trees, her);
-            sin = createExprTreesDfs(node->children[1], expr_trees, her);
-            sin = createExprTreesDfs(node->children[2], expr_trees, her);
-            return sin;
-        } else {
-            for (Node* child : node->children) {
-                createExprTreesDfs(child, expr_trees, 0);
-            }
-        }
-    } else {
+        ExprNode* sin = her;
         for (Node* child : node->children) {
-            createExprTreesDfs(child, expr_trees, 0);
+            sin = createExprTreesDfs(child, expr_trees, sin);
+        }
+
+        if (
+            node->grammar_name == "ATRIBSTAT'"
+         || node->grammar_name == "ATRIBSTAT''"
+        ) {
+            return 0;
+        } else if (in_arithm_node && do_push) {
+            expr_trees.push_back(sin);
+            return 0;
+        } else {
+            return sin;
         }
     }
-    
-    return 0;
 }
 
 vector<ExprNode*> createExprTrees(Node* tree) {
@@ -327,7 +310,7 @@ string checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) {
     } else if (node->type == "const") {
         if (node->token.type == INT_CONST)         return "int";
         else if (node->token.type == FLOAT_CONST)  return "float";
-        else if (node->token.type == STRING_CONST) return "null";
+        else if (node->token.type == STRING_CONST) return "string";
         else                                       assert(false);
     } else {
         if (node->child1 && node->child2) {
@@ -527,10 +510,13 @@ int main(int argc, char *argv[]) {
     vector<ExprNode*> expr_trees = createExprTrees(tree);
     addTypes(symbol_table, tree);
 
-    for (ExprNode* expr_tree : expr_trees) {
-        bool success = checkTypes(symbol_table, expr_tree);
-        assert(success);
-    }
+    //for (ExprNode* expr_tree : expr_trees) {
+    //    bool success = checkTypes(symbol_table, expr_tree);
+    //    assert(success);
+    //}
+
+    //bool success = checkScope(tree);
+    //assert(success);
 
     cout << "Tree:\n";
     dfs_print(tree);
@@ -540,9 +526,6 @@ int main(int argc, char *argv[]) {
         dfs_print(expr_tree, symbol_table);
         cout << "\n";
     }
-
-    bool success = checkScope(tree);
-    assert(success);
 
     return 0;
 }
