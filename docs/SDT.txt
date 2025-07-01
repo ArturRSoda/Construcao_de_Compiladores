@@ -1,133 +1,115 @@
-PROGRAM -> {STATEMENT.next = newLabel()} STATEMENT {PROGRAM.code = STATEMENT.code || label(STATEMENT.next)}
-PROGRAM -> {FUNCLIST.next = newLabel()} FUNCLIST {PROGRAM.code = FUNCLIST.code || label(FUNCLIST.next)}
-PROGRAM -> ϵ {PROGRAM.code = gen("goto", PROGRAM.next)}
+PROGRAM -> {STATEMENT.next = newLabel()} STATEMENT
+    {PROGRAM.code = STATEMENT.code || label(STATEMENT.next)}
+PROGRAM -> {FUNCLIST.next = newLabel()} FUNCLIST
+    {PROGRAM.code = FUNCLIST.code || label(FUNCLIST.next)}
+PROGRAM -> ϵ
+    {PROGRAM.code = ""}
 
-FUNCLIST -> {FUNCDEF.next = newLabel()} FUNCDEF {FUNCLISt'.next = FUNCLIST.next} FUNCLIST' {FUNCLIST.code = FUNCDEF.code || label(FUNCDEF.next) || FUNCLIST'.code}
+FUNCLIST -> {FUNCDEF.next = newLabel()} FUNCDEF {FUNCLIST'.next = FUNCLIST.next} FUNCLIST'
+    {FUNCLIST.code = FUNCDEF.code || label(FUNCDEF.next) || FUNCLIST'.code}
 
-FUNCDEF -> def ident ( {PARAMLIST.next = newLabel()} PARAMLIST ) { {STATELIST.next = FUNCDEF.next} STATELIST } {FUNCDEF.code = PARAMLIST.code || label(PARAMLIST.next || STATELIST.code)}
+FUNCDEF -> def ident ( {PARAMLIST.next = newLabel()} PARAMLIST ) { {STATELIST.next = FUNCDEF.next} STATELIST }
+    {FUNCDEF.code = PARAMLIST.code || label(PARAMLIST.next) || STATELIST.code}
 
-PARAMLIST -> string ident {PARAMLIST'''.next = newLabel()} PARAMLIST''' {PARAMLIST.code = PARAMLISt'''.code || label(PARAMLIST'''.next)}
-PARAMLIST -> float ident {PARAMLIST''.next = newLabel()} PARAMLIST'' {PARAMLIST.code = PARAMLISt''.code || label(PARAMLIST''.next)}
-PARAMLIST -> int ident {PARAMLIST'.next = newLabel()} PARAMLIST' {PARAMLIST.code = PARAMLISt'.code || label(PARAMLIST'.next)}
-PARAMLIST -> ϵ {PARAMLIST.code = gen("goto", PARAMLIST.next)}
+PARAMLIST -> string ident {PARAMLIST'''.next = newLabel()} PARAMLIST'''
+    {PARAMLIST.code = gen("param", ident.name, "string") || PARAMLIST'''.code || label(PARAMLIST'''.next)}
+PARAMLIST -> float ident {PARAMLIST''.next = newLabel()} PARAMLIST''
+    {PARAMLIST.code = gen("param", ident.name, "float") || PARAMLIST''.code || label(PARAMLIST''.next)}
+PARAMLIST -> int ident {PARAMLIST'.next = newLabel()} PARAMLIST'
+    {PARAMLIST.code = gen("param", ident.name, "int") || PARAMLIST'.code || label(PARAMLIST'.next)}
+PARAMLIST -> ϵ
+    {PARAMLIST.code = gen("goto", PARAMLIST.next)}
 
-STATEMENT -> {VARDECL.next = newLabel()} VARDECL ; {STATEMENT.code = VARDECL.code || label(VARDECL.next)}
-STATEMENT -> {ATRIBSTAT.next = newLabel()} ATRIBSTAT ; {STATEMENT.code = ATRIBSTAT.code || label(ATRIBSTAT.next)}
-STATEMENT -> {PRINTSTAT.next = newLabel()} PRINTSTAT ; {STATEMENT.code = PRINTSTAT.code || label(PRINTSTAT.next)}
-STATEMENT -> {READSTAT.next = newLabel()} READSTAT ; {STATEMENT.code = READSTAT.code || label(READSTAT.next)}
-STATEMENT -> {RETURNSTAT.next = newLabel()} RETURNSTAT ; {STATEMENT.code = IFSTAT.code || label(IFSTAT.next)}
-STATEMENT -> {IFSTAT.next = newLabel()} IFSTAT {STATEMENT.code = IFSTAT.code || label(IFSTAT.next)}
-STATEMENT -> {FORSTAT.next = newLabel()} FORSTAT {STATEMENT.code = FORSTAT.code || label(FORSTAT.next)}
-STATEMENT -> { {STATELIST.next = newLabel()} STATELIST } {STATEMENT.code = STATELIST.code || label(STATELIST.next)}
-STATEMENT -> break {STATEMENT.code = gen("GOTO", STATEMENT.next)};
-STATEMENT -> ; {STATEMENT.code = gen("GOTO", STATEMENT.next)}
+STATEMENT -> {VARDECL.next = newLabel()} VARDECL ;
+    {STATEMENT.code = VARDECL.code || label(VARDECL.next)}
+STATEMENT -> {ATRIBSTAT.next = newLabel()} ATRIBSTAT ;
+    {STATEMENT.code = ATRIBSTAT.code || label(ATRIBSTAT.next)}
+STATEMENT -> {PRINTSTAT.next = newLabel()} PRINTSTAT ;
+    {STATEMENT.code = PRINTSTAT.code || label(PRINTSTAT.next)}
+STATEMENT -> {READSTAT.next = newLabel()} READSTAT ;
+    {STATEMENT.code = READSTAT.code || label(READSTAT.next)}
+STATEMENT -> {RETURNSTAT.next = newLabel()} RETURNSTAT ;
+    {STATEMENT.code = RETURNSTAT.code || label(RETURNSTAT.next)}
+STATEMENT -> {IFSTAT.next = newLabel()} IFSTAT
+    {STATEMENT.code = IFSTAT.code || label(IFSTAT.next)}
+STATEMENT -> {FORSTAT.next = newLabel()} FORSTAT
+    {STATEMENT.code = FORSTAT.code || label(FORSTAT.next)}
+STATEMENT -> { {STATELIST.next = newLabel()} STATELIST }
+    {STATEMENT.code = STATELIST.code || label(STATELIST.next)}
+STATEMENT -> break ;
+    {STATEMENT.code = gen("goto", STATEMENT.next)}
+STATEMENT -> ;
+    {STATEMENT.code = gen("goto", STATEMENT.next)}
 
-VARDECL -> int ident {NU.next = newLabel()} NU {VARDECL.code = NU.code || label(NU.next)}
-VARDECL -> float ident {NU.next = newLabel()} NU {VARDECL.code = NU.code || label(NU.next)}
-VARDECL -> string ident {NU.next = newLabel()} NU {VARDECL.code = NU.code || label(NU.next)}
+VARDECL -> int ident {NU.next = newLabel()} NU
+    {VARDECL.code = gen("declare", ident.name, "int") || NU.code || label(NU.next)}
+VARDECL -> float ident {NU.next = newLabel()} NU
+    {VARDECL.code = gen("declare", ident.name, "float") || NU.code || label(NU.next)}
+VARDECL -> string ident {NU.next = newLabel()} NU
+    {VARDECL.code = gen("declare", ident.name, "string") || NU.code || label(NU.next)}
 
-NU -> [ int_constant ] {NU.next = newLabel()} NU {NU.code = NU.code || label(NU.next)}
-NU -> ϵ {NU.code = gen("goto", NU.next)}
+NU -> [ int_constant ] {NU'.next = newLabel()} NU'
+    {NU.code = gen("array", int_constant.value) || NU'.code || label(NU'.next)}
+NU -> ϵ
+    {NU.code = gen("goto", NU.next)}
 
-ATRIBSTAT -> {LVALUE.next = newLabel()} LVALUE = {ATRIBSTAT'.next = ATRIBSTAT.next} ATRIBSTAT' {LVALUE.code || label(LVALUE.next) || ATRIBSTAT'.code}
-
-FUNCCALL -> ident ( {PARAMLISTCALL.next = newLabel()} PARAMLISTCALL ) {FUNCCALL.code = PARAMLISTCALL.code || label(PARAMLISTCALL.next)}
-
-PARAMLISTCALL -> ident {PARAMLISTCALL'.next = newLabel()} PARAMLISTCALL' {PARAMLISTCALL'.code || label(PARAMLISTCALL'.next)}
-PARAMLISTCALL -> ϵ {PARAMLISTCALL.code = gen("goto", PARAMLISTCALL.next)}
-
-PRINTSTAT -> print {EXPRESSION.next = newLabel()} EXPRESSION {PRINTSTAT.code = EXPRESSION.code || label(EXPRESSION.next)}
-
-READSTAT -> read {LVALUE.next = newLabel()} LVALUE {READSTAT.code = LVALUE.code || label(LVALUE.next)}
-
-RETURNSTAT -> return {RETURNSTAT.code = gen("goto", RETURNSTAT.next)}
-
-IFSTAT -> if ( {EXPRESSION.true = newLabel(); EXPRESSION.false = STATEMENT.next = IFSTAT.next} EXPRESSION ) STATEMENT {IFSTAT.next = newLabel()} IFSTAT' {IFSTAT.code = EXPRESSION.code || label(EXPRESSION.true) || STATEMENT.code || IFSTAT'.code}
-
-FORSTAT -> for ( {ATRIBSTAT.next = newLabel()} ATRIBSTAT ; {begin = newLabel(); EXPRESSION.true = newlabel; EXPRESSION.false = FORSTAT.next} EXPRESSION ; {ATRIBSTAT.next = newLabel()} ATRIBSTAT ) {STATEMENT.next = begin) STATEMENT {FORSTAT.code = ATRIBSTAT.code || label(begin) || EXPRESSION.code || label(EXPRESSION.true) || STATEMENT.code || ATRIBSTAT.code || gen("goto", begin)}
-
-STATELIST -> int ident {NU.next = newLabel()} NU ; {STATELIST'.next = STATELIST.next} STATELIST' {STATELIST.code = NU.code || label(NU.next) || STATELIST'.code}
-STATELIST -> float ident {NU.next = newLabel()} NU ; {STATELIST'.next = STATELIST.next} STATELIST' {STATELIST.code = NU.code || label(NU.next) || STATELIST'.code}
-STATELIST -> string ident {NU.next = newLabel()} NU ; {STATELIST'.next = STATELIST.next} STATELIST' {STATELIST.code = NU.code || label(NU.next) || STATELIST'.code}
-STATELIST -> LVALUE = ATRIBSTAT' ;  STATELIST'
-STATELIST -> print EXPRESSION ; STATELIST'
-STATELIST -> read LVALUE ; STATELIST'
-STATELIST -> return ; STATELIST'
-STATELIST -> if ( EXPRESSION ) STATEMENT IFSTAT' STATELIST'
-STATELIST -> for ( ATRIBSTAT ; EXPRESSION ; ATRIBSTAT ) STATEMENT STATELIST'
-STATELIST -> { STATELIST } STATELIST'
-STATELIST -> break ; STATELIST'
-STATELIST -> ; STATELIST'
-
-ALLOCEXPRESSION -> new ALLOCEXPRESSION'
-ND -> [ NUMEXPRESSION ] ND
-ND -> ϵ
 EXPRESSION -> NUMEXPRESSION EXPRESSION'
-NUMEXPRESSION -> TERM NT
-NT -> + TERM NT
-NT -> - TERM NT
-NT -> ϵ
-TERM -> UNARYEXPR NQ
-NQ -> * UNARYEXPR NQ
-NQ -> / UNARYEXPR NQ
-NQ -> % UNARYEXPR NQ
-NQ -> ϵ
-UNARYEXPR -> FACTOR
-UNARYEXPR -> + FACTOR
-UNARYEXPR -> - FACTOR
-FACTOR -> int_constant
-FACTOR -> float_constant
-FACTOR -> string_constant
-FACTOR -> null
-FACTOR -> LVALUE
-FACTOR -> ( NUMEXPRESSION )
-LVALUE -> ident NC
-NC -> [ NUMEXPRESSION ] NC
-NC -> ϵ
-FUNCLIST' -> def ident ( PARAMLIST ) { STATELIST } FUNCLIST'
-FUNCLIST' -> ϵ
-PARAMLIST' -> , PARAMLIST
-PARAMLIST' -> ϵ
-PARAMLIST'' -> , PARAMLIST
-PARAMLIST'' -> ϵ
-PARAMLIST''' -> , PARAMLIST
-PARAMLIST''' -> ϵ
-ATRIBSTAT' -> int_constant NQ NT EXPRESSION'
-ATRIBSTAT' -> float_constant NQ NT EXPRESSION'
-ATRIBSTAT' -> string_constant NQ NT EXPRESSION'
-ATRIBSTAT' -> null NQ NT EXPRESSION'
-ATRIBSTAT' -> ( NUMEXPRESSION ) NQ NT EXPRESSION'
-ATRIBSTAT' -> + FACTOR NQ NT EXPRESSION'
-ATRIBSTAT' -> - FACTOR NQ NT EXPRESSION'
-ATRIBSTAT' -> new ALLOCEXPRESSION'
-ATRIBSTAT' -> ident ATRIBSTAT''
-ATRIBSTAT'' -> ( PARAMLISTCALL )
-ATRIBSTAT'' -> NC NQ NT EXPRESSION'
-ATRIBSTAT'' -> ϵ
-PARAMLISTCALL' -> , PARAMLISTCALL
-PARAMLISTCALL' -> ϵ
-IFSTAT' -> else STATEMENT
-IFSTAT' -> ϵ
-STATELIST' -> int ident NU ; STATELIST'
-STATELIST' -> float ident NU ; STATELIST'
-STATELIST' -> string ident NU ; STATELIST'
-STATELIST' -> ident NC = ATRIBSTAT' ; STATELIST'
-STATELIST' -> print EXPRESSION ; STATELIST'
-STATELIST' -> read LVALUE ; STATELIST'
-STATELIST' -> return ; STATELIST'
-STATELIST' -> if ( EXPRESSION ) STATEMENT IFSTAT' STATELIST'
-STATELIST' -> for ( ATRIBSTAT ; EXPRESSION ; ATRIBSTAT ) STATEMENT STATELIST'
-STATELIST' -> { STATELIST } STATELIST'
-STATELIST' -> break ; STATELIST'
-STATELIST' -> ; STATELIST'
-STATELIST' -> ϵ
-ALLOCEXPRESSION' -> int [ NUMEXPRESSION ] ND
-ALLOCEXPRESSION' -> float [ NUMEXPRESSION ] ND
-ALLOCEXPRESSION' -> string [ NUMEXPRESSION ] ND
-EXPRESSION' -> ϵ
+    {EXPRESSION.place = NUMEXPRESSION.place;
+    EXPRESSION.true = EXPRESSION'.true;
+    EXPRESSION.false = EXPRESSION'.false;
+    EXPRESSION.code = NUMEXPRESSION.code || EXPRESSION'.code}
+
 EXPRESSION' -> < NUMEXPRESSION
+    {EXPRESSION'.code = NUMEXPRESSION.code || gen("blt", EXPRESSION.place, NUMEXPRESSION.place, EXPRESSION.true) || gen("goto", EXPRESSION.false)}
 EXPRESSION' -> > NUMEXPRESSION
-EXPRESSION' -> <= NUMEXPRESSION
-EXPRESSION' -> >= NUMEXPRESSION
-EXPRESSION' -> == NUMEXPRESSION
-EXPRESSION' -> != NUMEXPRESSION
+    {EXPRESSION'.code = NUMEXPRESSION.code || gen("bgt", EXPRESSION.place, NUMEXPRESSION.place, EXPRESSION.true) || gen("goto", EXPRESSION.false)}
+EXPRESSION' -> ϵ
+    {EXPRESSION'.code = "")}
+
+NUMEXPRESSION -> TERM NT
+    {NUMEXPRESSION.place = TERM.place;
+    NUMEXPRESSION.code = TERM.code || NT.code}
+
+NT -> + TERM NT1
+    {NT.code = TERM.code || NT1.code || gen("add", NT.place, TERM.place, NT1.place)}
+NT -> - TERM NT1
+    {NT.code = TERM.code || NT1.code || gen("sub", NT.place, TERM.place, NT1.place)}
+NT -> ϵ
+    {NT.code = ""}
+
+TERM -> UNARYEXPR NQ
+    {TERM.place = UNARYEXPR.place;
+    TERM.code = UNARYEXPR.code || NQ.code}
+
+NQ -> * UNARYEXPR NQ1
+    {NQ.code = UNARYEXPR.code || NQ1.code || gen("mul", NQ.place, UNARYEXPR.place, NQ1.place)}
+NQ -> / UNARYEXPR NQ1
+    {NQ.code = UNARYEXPR.code || NQ1.code || gen("div", NQ.place, UNARYEXPR.place, NQ1.place)}
+NQ -> ϵ
+    {NQ.code = ""}
+
+UNARYEXPR -> + FACTOR
+    {UNARYEXPR.place = FACTOR.place;
+    UNARYEXPR.code = FACTOR.code}
+UNARYEXPR -> - FACTOR
+    {UNARYEXPR.code = FACTOR.code || gen("neg", UNARYEXPR.place, FACTOR.place)}
+UNARYEXPR -> FACTOR
+    {UNARYEXPR.place = FACTOR.place;
+    UNARYEXPR.code = FACTOR.code}
+
+FACTOR -> int_constant
+    {FACTOR.place = gen("const", int_constant.value)}
+FACTOR -> float_constant
+    {FACTOR.place = gen("const", float_constant.value)}
+FACTOR -> ( EXPRESSION )
+    {FACTOR.place = EXPRESSION.place;
+    FACTOR.code = EXPRESSION.code}
+FACTOR -> LVALUE
+    {FACTOR.place = LVALUE.place
+    FACTOR.code = LVALUE.code;}
+
+IFSTAT -> if ( {EXPRESSION.true = newLabel(); EXPRESSION.false = IFSTAT.next} EXPRESSION ) {STATEMENT.next = IFSTAT.next} STATEMENT
+    {IFSTAT.code = EXPRESSION.code || label(EXPRESSION.true) || STATEMENT.code || label(STATEMENT.next)}
+
+FORSTAT -> for ( {ATRIBSTAT1.next = newLabel()} ATRIBSTAT1 ; {EXPRESSION.true = newLabel(); EXPRESSION.false = FORSTAT.next} EXPRESSION ; {ATRIBSTAT2.next = newLabel()} ATRIBSTAT2 ) {STATEMENT.next = newLabel()} STATEMENT
+    {FORSTAT.code = ATRIBSTAT1.code || label(loopStart) || EXPRESSION.code || label(EXPRESSION.true) || STATEMENT.code || ATRIBSTAT2.code || gen("goto", loopStart) || label(EXPRESSION.false)}
