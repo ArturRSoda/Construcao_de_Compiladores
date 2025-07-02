@@ -14,12 +14,12 @@ def multiplication (float a, float b, float c) {
 }
 
 def division (float a, float b, float c) {
-    c = a + b;
+    c = a / b;
     return;
 }
 
 def mod (float a, float b, float c) {
-    c = a % c;
+    c = a % b;
     return;
 }
 
