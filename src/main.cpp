@@ -70,10 +70,25 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
     }
     if (node->type == "ident") {
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
-        string var_type = symbol->var_type;
+        VarType& var_type = symbol->var_type;
 
-        if (var_type.size()) {
-            cout << node->type << ": " << var_type << " " << node->token.lexeme;
+        if (var_type.base_type.size()) {
+            cout << node->type << ": ";
+
+            cout << var_type.base_type << " ";
+            {
+                int diff = (int)var_type.dimensions.size() - (int)node->array_indices.size();
+                assert(diff >= 0);
+
+                int sz = var_type.dimensions.size();
+                for (int i = sz-diff; i < sz; i++) {
+                    cout << "[";
+                    cout << var_type.dimensions[i];
+                    cout << "]";
+                }
+            }
+
+            cout << node->token.lexeme;
 
             for (ExprNode* index_node : node->array_indices) {
                 cout << "[";
@@ -241,7 +256,7 @@ vector<ExprNode*> createExprTrees(Node* tree) {
     return expr_trees;
 }
 
-string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
+VarType addTypesDfs(SymbolTable& symbol_table, Node* node, VarType her) {
     assert(node);
 
     if (
@@ -256,27 +271,27 @@ string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
         )
     ) {
         assert(node->children.size() >= 3);
-        string sin = node->children[0]->grammar_name;
+        VarType sin = {node->children[0]->grammar_name, {}};
         sin = addTypesDfs(symbol_table, node->children[2], sin);
 
         Symbol* symbol = symbol_table.lookup(node->children[1]->token.lexeme);
         symbol->var_type = sin;
 
         for (Node* node : node->children) {
-            addTypesDfs(symbol_table, node, "");
+            addTypesDfs(symbol_table, node, {"", {}});
         }
     } else if (node->grammar_name == "PARAMLIST") {
         if (!node->children.size()) {
-            return "";
+            return {"", {}};
         }
 
-        string sin = node->children[0]->grammar_name;
+        VarType sin = {node->children[0]->grammar_name, {}};
 
         Symbol* symbol = symbol_table.lookup(node->children[1]->token.lexeme);
         symbol->var_type = sin;
 
         for (Node* node : node->children) {
-            addTypesDfs(symbol_table, node, "");
+            addTypesDfs(symbol_table, node, {"", {}});
         }
     } else if (node->grammar_name == "NU") {
         if (!node->children.size()) {
@@ -286,47 +301,42 @@ string addTypesDfs(SymbolTable& symbol_table, Node* node, string her) {
         assert(node->children.size() >= 4);
 
         Token token = node->children[1]->token;
-        string sin = her;
-        sin += "[" + token.lexeme + "]";
+        VarType& sin = her;
+        sin.dimensions.push_back(stoi(token.lexeme));
         sin = addTypesDfs(symbol_table, node->children[3], sin);
         return sin;
     } else {
         for (Node* node : node->children) {
-            addTypesDfs(symbol_table, node, "");
+            addTypesDfs(symbol_table, node, {"", {}});
         }
     }
 
-    return "";
+    return {"", {}};
 }
 
 void addTypes(SymbolTable& symbol_table, Node* tree) {
-    addTypesDfs(symbol_table, tree, "");
+    addTypesDfs(symbol_table, tree, {"", {}});
 }
 
-string checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) {
+VarType checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) {
     if (node->type == "ident") {
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
-        
-        string type = symbol->var_type;
-        int i = 0;
-        for (; i < (int)type.size(); i++) {
-            if (type[i] == '[') break;
-        }
-        type.resize(i);
 
+        VarType type = symbol->var_type;
+        type.dimensions.resize(type.dimensions.size() - node->array_indices.size());
         return type;
     } else if (node->type == "const") {
-        if (node->token.type == INT_CONST)         return "int";
-        else if (node->token.type == FLOAT_CONST)  return "float";
-        else if (node->token.type == STRING_CONST) return "string";
+        if (node->token.type == INT_CONST)         return {"int", {}};
+        else if (node->token.type == FLOAT_CONST)  return {"float", {}};
+        else if (node->token.type == STRING_CONST) return {"string", {}};
         else                                       assert(false);
     } else {
         if (node->child1 && node->child2) {
-            string type1 = checkTypesDfs(symbol_table, node->child1, success);
-            string type2 = checkTypesDfs(symbol_table, node->child2, success);
+            VarType type1 = checkTypesDfs(symbol_table, node->child1, success);
+            VarType type2 = checkTypesDfs(symbol_table, node->child2, success);
             if (type1 != type2) {
                 success = false;
-                return "";
+                return {"", {}};
             }
             return type1;
         } else {
