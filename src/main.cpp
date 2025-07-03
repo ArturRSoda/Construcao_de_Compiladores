@@ -479,7 +479,7 @@ struct IntermData {
     string code;
 
     string last_attribution;
-    string break_label;
+    string next;
     int arg_count;
 
     string t_in;
@@ -571,7 +571,7 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
      || node->grammar_name == "NQ"
      || node->grammar_name == "EXPRESSION'";
 
-    bool nc =
+    bool is_nc =
         node->grammar_name == "NC";
 
     bool arithm_forward =
@@ -583,7 +583,7 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
      || in_arithm_atribstat1
      || in_arithm_atribstat2;
 
-    bool in_arithm_node = one_oper || two_oper || nc || arithm_forward;
+    bool in_arithm_node = one_oper || two_oper || is_nc || arithm_forward;
 
     bool is_if =
         node->children.size()
@@ -597,9 +597,18 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
         node->children.size()
      && node->children[0]->grammar_name == "break";
 
+    bool is_new =
+        node->children.size()
+     && (
+            node->children[0]->grammar_name == "new"
+         || node->grammar_name == "ALLOCEXPRESSION'"
+         || node->grammar_name == "ND"
+        );
+
+
     auto recurse = [&](Node* child, IntermData* child_data) {
-        if (!child_data->break_label.size()) {
-            child_data->break_label = data->break_label;
+        if (!child_data->next.size()) {
+            child_data->next = data->next;
         }
         if (!child_data->last_attribution.size()) {
             child_data->last_attribution = data->last_attribution;
@@ -674,6 +683,46 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
             recurse(statelist, &statelist_data);
 
             data->code += statelist_data.code;
+        }
+    } else if (is_new) {
+        // ALLOCEXPRESSION -> new ALLOCEXPRESSION'
+        // ATRIBSTAT' -> new ALLOCEXPRESSION'
+        // ALLOCEXPRESSION' -> int [ NUMEXPRESSION ] ND
+        // ALLOCEXPRESSION' -> float [ NUMEXPRESSION ] ND
+        // ALLOCEXPRESSION' -> string [ NUMEXPRESSION ] ND
+        // ND -> [ NUMEXPRESSION ] ND
+
+        if (node->children[0]->grammar_name == "new") {
+            Node* allocexpression1 = node->children[1];
+            IntermData allocexpression1_data{};
+
+            recurse(allocexpression1, &allocexpression1_data);
+
+            data->t_out += "new " + allocexpression1_data.t_out + "\n";
+        } else if (node->grammar_name != "ND") {
+            Node* numexpression = node->children[2]; 
+            Node* nd = node->children[4];
+
+            IntermData numexpression_data{};
+            IntermData nd_data{};
+
+            recurse(numexpression, &numexpression_data);
+            recurse(nd, &nd_data);
+
+            string type = node->children[0]->grammar_name;
+
+            data->t_out += type + "[" + numexpression_data.t_out + "]" + nd_data.t_out;
+        } else {
+            Node* numexpression = node->children[1]; 
+            Node* nd = node->children[3];
+
+            IntermData numexpression_data{};
+            IntermData nd_data{};
+
+            recurse(numexpression, &numexpression_data);
+            recurse(nd, &nd_data);
+            
+            data->t_out += "[" + numexpression_data.t_out + "]" + nd_data.t_out;
         }
     } else if (is_print) {
         // PRINTSTAT -> print EXPRESSION
@@ -861,9 +910,25 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
                 data->code += rest_data.code;
                 data->t_out = rest_data.t_out;
             }
-        } else if (nc) {
-            // TODO
-            data->t_out = data->t_in;
+        } else if (is_nc) {
+            if (!node->children.size()) {
+                data->t_out = data->t_in;
+                return;
+            }
+
+            // NC -> [ NUMEXPRESSION ] NC
+            // NC -> ϵ
+
+            Node* nc = node->children[3];
+            IntermData nc_data{};
+
+            Node* numexpression = node->children[1];
+            IntermData numexpression_data{};
+
+            recurse(numexpression, &numexpression_data);
+            recurse(nc, &nc_data);
+
+            data->t_out = data->t_in + "[" + numexpression_data.t_out + "]" + nc_data.t_out;
         } else {
             string last_t = data->t_in;
             for (Node* child : node->children) {
@@ -947,7 +1012,7 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
         recurse(expression, &expression_data);
         recurse(atribstat_inc, &atribstat_inc_data);
 
-        statement_data.break_label = end_label;
+        statement_data.next = end_label;
         recurse(statement, &statement_data);
 
         data->code += "\n"
@@ -974,7 +1039,7 @@ void generateIntermediateCodeDfs(Node* node, IntermData* data) {
         // STATELIST -> break ; STATELIST'
         // STATELIST' -> break ; STATELIST'
 
-        data->code += "goto " + data->break_label + "\n";
+        data->code += "goto " + data->next + "\n";
 
         if (node->children.size() > 2) {
             Node* statelist = node->children[2];
