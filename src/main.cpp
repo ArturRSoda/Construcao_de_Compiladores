@@ -30,7 +30,14 @@ void dfs_print(Node* node, int depth=0) {
         cout << "-";
     }
     cout << node->grammar_name;
-    if (node->token.type == IDENT) {
+
+    bool is_constant =
+        node->grammar_name == "int_constant"
+     || node->grammar_name == "float_constant"
+     || node->grammar_name == "string_constant"
+     || node->grammar_name == "null";
+
+    if (node->token.type == IDENT || is_constant) {
         cout << ": " << node->token.lexeme;
     }
     cout << "\n";
@@ -64,6 +71,22 @@ ExprNode* createExprNodeIdent(Token token) {
     return new ExprNode{"ident", token};
 }
 
+string varTypeToString(VarType& var_type, int ignore) {
+    string s = var_type.base_type;
+
+    int diff = (int)var_type.dimensions.size() - ignore;
+    //assert(diff >= 0);
+
+    int sz = var_type.dimensions.size();
+    for (int i = sz-diff; i < sz; i++) {
+        s += "[";
+        s += to_string(var_type.dimensions[i]);
+        s += "]";
+    }
+
+    return s;
+}
+
 void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
     for (int i = 0; i < depth; i++) {
         cout << "-";
@@ -75,21 +98,9 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
         if (var_type.base_type.size()) {
             cout << node->type << ": ";
 
-            cout << var_type.base_type << " ";
-            {
-                int diff = (int)var_type.dimensions.size() - (int)node->array_indices.size();
-                assert(diff >= 0);
-
-                int sz = var_type.dimensions.size();
-                for (int i = sz-diff; i < sz; i++) {
-                    cout << "[";
-                    cout << var_type.dimensions[i];
-                    cout << "]";
-                }
-            }
+            cout << varTypeToString(var_type, node->array_indices.size()) << " ";
 
             cout << node->token.lexeme;
-
             for (ExprNode* index_node : node->array_indices) {
                 cout << "[";
                 cout << index_node->token.lexeme;
@@ -113,6 +124,7 @@ void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0) {
             s = "string";
         } break;
         default: {
+            s = node->token.lexeme;
         } break;
         }
         cout << node->type << ": " << s << " " << node->token.lexeme << "\n";
@@ -168,7 +180,7 @@ ExprNode* createExprTreesDfs(
         node->grammar_name == "EXPRESSION"
      || in_arithm_atribstat1;
 
-    assert(do_push ? forward : true);
+    //assert(do_push ? forward : true);
 
     bool in_arithm_node = one_oper || two_oper || nc || forward;
 
@@ -213,7 +225,8 @@ ExprNode* createExprTreesDfs(
                 return her;
             }
         } else {
-            assert(false);
+            return 0;
+            //assert(false);
         }
     } else {
         bool is_const =
@@ -236,13 +249,11 @@ ExprNode* createExprTreesDfs(
             sin = createExprTreesDfs(child, expr_trees, sin);
         }
 
-        if (
-            node->grammar_name == "ATRIBSTAT'"
-         || node->grammar_name == "ATRIBSTAT''"
-        ) {
+        if (node->grammar_name == "ATRIBSTAT''") {
+            // NOTE: needed because ATRIBSTAT'' may be the arguments of a function call.
             return 0;
         } else if (in_arithm_node && do_push) {
-            expr_trees.push_back(sin);
+            if (sin) expr_trees.push_back(sin);
             return 0;
         } else {
             return sin;
@@ -257,7 +268,7 @@ vector<ExprNode*> createExprTrees(Node* tree) {
 }
 
 VarType addTypesDfs(SymbolTable& symbol_table, Node* node, VarType her) {
-    assert(node);
+    //assert(node);
 
     if (
         (
@@ -270,7 +281,7 @@ VarType addTypesDfs(SymbolTable& symbol_table, Node* node, VarType her) {
          || node->children[0]->grammar_name == "string"
         )
     ) {
-        assert(node->children.size() >= 3);
+        //assert(node->children.size() >= 3);
         VarType sin = {node->children[0]->grammar_name, {}};
         sin = addTypesDfs(symbol_table, node->children[2], sin);
 
@@ -298,7 +309,7 @@ VarType addTypesDfs(SymbolTable& symbol_table, Node* node, VarType her) {
             return her;
         }
 
-        assert(node->children.size() >= 4);
+        //assert(node->children.size() >= 4);
 
         Token token = node->children[1]->token;
         VarType& sin = her;
@@ -323,18 +334,33 @@ VarType checkTypesDfs(SymbolTable& symbol_table, ExprNode* node, bool& success) 
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
 
         VarType type = symbol->var_type;
-        type.dimensions.resize(type.dimensions.size() - node->array_indices.size());
+        
+        int old_size = type.dimensions.size();
+
+        int new_size = old_size - node->array_indices.size();
+        int step = node->array_indices.size();
+
+        for (int i = 0; i < new_size; i++) {
+            type.dimensions[i] = type.dimensions[i+step];
+        }
+        type.dimensions.resize(new_size);
+
         return type;
     } else if (node->type == "const") {
         if (node->token.type == INT_CONST)         return {"int", {}};
         else if (node->token.type == FLOAT_CONST)  return {"float", {}};
         else if (node->token.type == STRING_CONST) return {"string", {}};
-        else                                       assert(false);
+        else if (node->token.lexeme == "null")     return {"null", {}};
+        else                                       return {"", {}};//assert(false);
     } else {
         if (node->child1 && node->child2) {
             VarType type1 = checkTypesDfs(symbol_table, node->child1, success);
             VarType type2 = checkTypesDfs(symbol_table, node->child2, success);
             if (type1 != type2) {
+                cerr << "Operator " + node->token.lexeme +
+                    " at (" + to_string(node->token.line) + ", " + to_string(node->token.column) +
+                    ") has conflicting operand types: "
+                        + varTypeToString(type1, 0) + " and " + varTypeToString(type2, 0) + "\n";
                 success = false;
                 return {"", {}};
             }
@@ -417,6 +443,9 @@ bool checkScopeDfs(
                     != last_scope.end();
 
                 if (found_in_scope) {
+                    cerr << ident << " at " <<
+                        "(" + to_string(child->token.line) + ", " + to_string(child->token.column)
+                        + ")" + " was already declared in the scope\n";
                     return false;
                 }
 
@@ -444,13 +473,23 @@ bool checkScopeDfs(
                     }
                 }
 
-                if (!found) return false;
+                if (!found) {
+                    cerr << ident << " at " <<
+                        "(" + to_string(child->token.line) + ", " + to_string(child->token.column)
+                        + ")" + " was not declared\n";
+                    return false;
+                }
             }
         }
 
         /* Check break */ {
             if (child->grammar_name == "break") {
-                if (loop_count == 0) return false;
+                if (loop_count == 0) {
+                    cerr << "break at " <<
+                        "(" + to_string(child->token.line) + ", " + to_string(child->token.column)
+                        + ")" + " was used outside of a loop\n";
+                    return false;
+                }
             }
         }
 
@@ -1118,11 +1157,17 @@ int main(int argc, char *argv[]) {
 
     for (ExprNode* expr_tree : expr_trees) {
         bool success = checkTypes(symbol_table, expr_tree);
-        assert(success);
+        if (!success) {
+            cerr << "ERROR WHEN CHECKING TYPES!!!\n";
+            return EXIT_FAILURE;
+        }
     }
 
     bool success = checkScope(tree);
-    assert(success);
+    if (!success) {
+        cerr << "ERROR WHEN CHECKING SCOPE!!!\n";
+        return EXIT_FAILURE;
+    }
 
     cout << "Tree:\n";
     dfs_print(tree);
