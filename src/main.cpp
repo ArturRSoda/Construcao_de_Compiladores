@@ -1112,6 +1112,24 @@ string generateIntermediateCode(Node* tree) {
     return data.code;
 }
 
+void deallocate(Node* node) {
+    for (Node* child : node->children) {
+        deallocate(child);
+        delete child;
+    }
+}
+
+void deallocate(ExprNode* node) {
+    if (node->child1) {
+        deallocate(node->child1);
+        delete node->child1;
+    }
+    if (node->child2) {
+        deallocate(node->child2);
+        delete node->child2;
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         cerr << "Right Usage: " << argv[0] << " <input_file>\n";
@@ -1181,6 +1199,11 @@ int main(int argc, char *argv[]) {
     string intermediate_code = generateIntermediateCode(tree);
     cout << "Intermediate code:\n";
     cout << intermediate_code;
+
+    deallocate(tree);
+    for (ExprNode* expr_tree : expr_trees) {
+        deallocate(expr_tree);
+    }
 
     return 0;
 }
