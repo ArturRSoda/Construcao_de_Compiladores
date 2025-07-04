@@ -300,7 +300,15 @@ VarType SemanticAnalyzer::checkTypesDfs(SymbolTable& symbol_table, ExprNode* nod
         
         int old_size = type.dimensions.size();
 
-        int new_size = old_size - node->array_indices.size();
+        int new_size = old_size - (int)node->array_indices.size();
+
+        if (new_size < 0) {
+            success = false;
+            cerr << "It's not possible to index type \"" << type.base_type << "\" at "
+                 << "(" << node->token.line << ", " << node->token.column << ")\n";
+            return {"", {}};
+        }
+
         int step = node->array_indices.size();
 
         for (int i = 0; i < new_size; i++) {
@@ -319,7 +327,7 @@ VarType SemanticAnalyzer::checkTypesDfs(SymbolTable& symbol_table, ExprNode* nod
         if (node->child1 && node->child2) {
             VarType type1 = checkTypesDfs(symbol_table, node->child1, success);
             VarType type2 = checkTypesDfs(symbol_table, node->child2, success);
-            if (type1 != type2) {
+            if (type1 != type2 && success) {
                 cerr << "Operator " + node->token.lexeme +
                     " at (" + to_string(node->token.line) + ", " + to_string(node->token.column) +
                     ") has conflicting operand types: "
