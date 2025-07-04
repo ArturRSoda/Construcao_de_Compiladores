@@ -52,7 +52,7 @@ def main (float a, float b, float c) {
 
 
     int i;
-    for (i = 365; i>0; i=i-1) {
+    for (i = 365; i > 10; i = i-1) {
         if (i % 2 == 0) {
             print "i is even";
         }
@@ -64,14 +64,14 @@ def main (float a, float b, float c) {
 
     int vector[100];
     int j;
-    for (j=0;j<100;j=j+1) {
+    for (j = 0; j < 100; j = j+1) {
         vector[j] = j;
         print "value j added successfully to the vector";
     }
 
-    for (j=0; j<100; j=j+1) {
+    for (j = 0; j < 100; j = j+1) {
         if (vector[j] == 50) {
-                print "finded the 50";
+                print "50 found";
                 break;
             }
     }

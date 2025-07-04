@@ -1,0 +1,110 @@
+def addbook () {
+    string title;
+    string author;
+    string isbn;
+    string available;
+
+    print "enter book title:";
+    read title;
+
+    print "enter book authoor:";
+    read author;
+
+    print "enter book ISNB:";
+    read isbn;
+
+    available = "true";
+    
+    string book[4];
+    book[0] = title;
+    book[1] = author;
+    book[2] = isbn;
+    book[3] = available;
+
+    return;
+}
+
+def borrowbook (string books, string borrowedbooks) {
+    string bookindex;
+    print "enter books index";
+    read bookindex;
+    int r;
+    r = -1;
+
+    string book;
+    book = books[bookindex];
+
+    if (book[3] != "true") {
+        print "book is already borrowed.";
+        return;
+    }
+    
+    book[3] = "false";
+    borrowedbooks[bookindex] = book;
+    
+    print "book borrowed";
+
+    r = 0;
+    return;
+}
+
+def returnbook (string books, string borrowedbooks) {
+    string bookindex;
+    print "enter books index";
+    read bookindex;
+    int r;
+    r = -1;
+
+    string book;
+    book = books[bookindex];
+
+    if (book[3] == "true") {
+        print "book is not borrowed.";
+        return;
+    }
+    
+        
+    book[3] = "true";
+    
+    print "book returned";
+
+    r = 0;
+    return;
+
+}
+
+def main () {
+    string books[10][4];
+    string borrowedbooks[10][4];
+    
+    int i;
+    string book;
+    for (i = 0; i < 10; i = i+1) {
+        book = addbook();
+        books[i] = book;
+    }
+
+    int r;
+    r = borrowbook(books, borrowedbooks);
+
+    r = returnbook(books, borrowedbooks);
+    
+    int i;
+    print "books:";
+    for (i = 0; i < 10; i = i+1) {
+        book = books[i];
+        print book[0];
+        print book[1];
+        print book[2];
+        print book[3];
+    }
+
+    print "borrowed books:";
+    for (i = 0; i < 10; i = i+1) {
+        book = borrowedbooks[i];
+        print book[0];
+        print book[1];
+        print book[2];
+        print book[3];
+    }
+}

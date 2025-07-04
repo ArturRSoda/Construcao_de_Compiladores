@@ -1,0 +1,121 @@
+def displayintro () {
+    print "Welcome to the Mysterious Cave Adventure!";
+    print "You find yourself at the entrance of a dark, mysterious cave.";
+    print "Your goal is to explore and find the hidden treasure.";
+    print "Be careful of the challenges that lie ahead!\n";
+    return;
+}
+
+def displayplayerstats (string name, int health, int strength, int luck) {
+    print "health:";
+    print health;
+    print "strength:";
+    print strength;
+    print "luck:";
+    print luck;
+
+    return;
+}
+
+def main () {
+    int r;
+    r = displayintro();
+
+    int health;
+    int strength; 
+    int luck;
+    health = 40;
+    strength = 15;
+    luck = 8;
+
+    string playername;
+    print "enter player name";
+    read playername;
+
+    r = displayplayerstats (playername, health, strength, luck);
+
+    print "You stand at the cave entrance. A large boulder blocks your path.";
+    print "You must decide how to proceed.";
+    
+    print "1. Try to push the boulder";
+    print "2. Look for an alternative path";
+    print "3. Use your strength to break through";
+    
+    string choice;
+    print "enter your choice";
+    read choice; 
+
+    if (choice == "1") {
+        print "You push with all your might, but the boulder doesn't budge.";
+        health = health - 10;
+    }
+    if (choice == "2") {
+        print "You find a narrow side passage and slip through.";
+        luck = luck + 2;
+    }
+    if (choice == "3") {
+        if (strength > 15) {
+            print "Your incredible strength shatters the boulder!";
+            strength = strength + 5;
+        } else {
+            print "You hurt yourself trying to break the boulder.";
+            health = health - 20;
+        }
+    }
+    
+    print "You encounter an underground river with a rickety wooden bridge.";
+    print "The bridge looks unstable, but crossing seems necessary.";
+    
+    print "1. Carefully walk across the bridge";
+    print "2. Try to swim across the river";
+    print "3. Look for another way around";
+   
+    print "enter your choice";
+    read choice; 
+    
+    if (choice == "1") {
+        if (luck > 7) {
+            print "You successfully cross the bridge with minimal difficulty.";
+            luck = luck + 1;
+        } else {
+            print "The bridge collapses! You take damage falling into the river.";
+            health = health - 25;
+        }
+    }
+    if (choice == "2") {
+        print "Swimming is challenging. The current is strong.";
+        health = health - 15;
+        strength = strength - 15;
+    }
+    if (choice == "3") {
+        print "You find a safer route, but it takes time and energy.";
+        health = health - 10;
+    }
+    
+    print "You enter a large chamber with a glimmering treasure chest.";
+    print "But a mysterious guardian blocks your path.";
+    
+    print "1. Attempt to fight the guardian";
+    print "2. Try to negotiate";
+    print "3. Look for a hidden passage";
+    
+    print "enter your choice";
+    read choice; 
+    
+    if (choice == "1") {
+        if (strength > 20) {
+            print "Your strength overwhelms the guardian! You claim the treasure.";
+        } else {
+            print "The guardian is too powerful. You are defeated.";
+            health = health - 50;
+        }
+    }
+    if (choice == "2") {
+        if (luck > 8) {
+            print "Your charm works! The guardian lets you pass.";
+        } else {
+            print "Negotiation fails. The guardian attacks.";
+            health = health -30;
+        }
+    }
+}
