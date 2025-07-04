@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
         expr_tree_file << "\n";
     }
     expr_tree_file.close();
-    cout << "Expression Tree was successfully saved on " << tree_out_dir << endl << endl;
+    cout << "Expression Tree was successfully saved on " << expr_tree_out_dir << endl << endl;
 
     IntermediateCodeGen interm;
     string intermediate_code = interm.generateIntermediateCode(tree);
