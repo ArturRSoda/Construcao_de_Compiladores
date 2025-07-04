@@ -361,7 +361,6 @@ bool LexicalAnalyzer::analyze() {
         else if (getOperator()) { reachForward(); }
         else if (getPonctuation()) { reachForward(); }
         else {
-            print_tokens();
             errorHandler("unrecognized symbol");
             return false;
         }
@@ -371,13 +370,24 @@ bool LexicalAnalyzer::analyze() {
 
 
 // Exibe os tokens encontrados
-void LexicalAnalyzer::print_tokens() {
-    cout << "===================\n";
-    cout << "Tokens\n";
-    cout << "===================\n";
-    printf("%-20s | %-20s | %s\n", "Lexeme", "TokenType", "(Line, Column)");
+void LexicalAnalyzer::print_tokens(string out_dir) {
+
+    ofstream out_file;
+    out_file.open(out_dir);
+    if (!out_file.is_open()) {
+        cerr << "Error while opening the output file for SymbolTable!";
+    }
+
+    out_file << "===================\n";
+    out_file << "Tokens\n";
+    out_file << "===================\n";
+    out_file << left;
+    out_file << setw(20) << "Lexeme" << " | " << setw(20) << "TokenType" << " | " << "(Line, Column)" << endl;
     for (Token t : tokens) {
-        printf("%-20s | %-20s | (%d, %d)\n", t.lexeme.c_str(), t.str_type.c_str(), t.line, t.column);
+        out_file << setw(20) << t.lexeme.c_str() << " | " << setw(20) << t.str_type.c_str() << " | (" << t.line << ", " << t.column << ")" << endl;
     }
     cout << endl;
+
+    out_file.close();
+    cout << "Tokens Vector was successifully saved on " << out_dir << endl;
 }

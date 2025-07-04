@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -20,6 +22,6 @@ class SymbolTable {
         void insert(TokenType type, string str_type, string symbol, int line, int column);
         Symbol* lookup(string lexeme);
 
-        void print();
+        void print(string out_dir);
 
 };

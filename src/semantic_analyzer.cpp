@@ -1,10 +1,10 @@
 #include "include/semantic_analyzer.hpp"
 
-void SemanticAnalyzer::dfs_print(Node* node, int depth) {
+void SemanticAnalyzer::dfs_print(Node* node, int depth, ofstream& out_file) {
     for (int i = 0; i < depth; i++) {
-        cout << "-";
+        out_file << "-";
     }
-    cout << node->grammar_name;
+    out_file << node->grammar_name;
 
     bool is_constant =
         node->grammar_name == "int_constant"
@@ -13,12 +13,12 @@ void SemanticAnalyzer::dfs_print(Node* node, int depth) {
      || node->grammar_name == "null";
 
     if (node->token.type == IDENT || is_constant) {
-        cout << ": " << node->token.lexeme;
+        out_file << ": " << node->token.lexeme;
     }
-    cout << "\n";
+    out_file << "\n";
 
     for (Node* child : node->children) {
-        dfs_print(child, depth+1);
+        dfs_print(child, depth+1, out_file);
     }
 }
 
@@ -50,29 +50,29 @@ string SemanticAnalyzer::varTypeToString(VarType& var_type, int ignore) {
     return s;
 }
 
-void SemanticAnalyzer::dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth) {
+void SemanticAnalyzer::dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth, ofstream& out_file) {
     for (int i = 0; i < depth; i++) {
-        cout << "-";
+        out_file << "-";
     }
     if (node->type == "ident") {
         Symbol* symbol = symbol_table.lookup(node->token.lexeme);
         VarType& var_type = symbol->var_type;
 
         if (var_type.base_type.size()) {
-            cout << node->type << ": ";
+            out_file << node->type << ": ";
 
-            cout << varTypeToString(var_type, node->array_indices.size()) << " ";
+            out_file << varTypeToString(var_type, node->array_indices.size()) << " ";
 
-            cout << node->token.lexeme;
+            out_file << node->token.lexeme;
             for (ExprNode* index_node : node->array_indices) {
-                cout << "[";
-                cout << index_node->token.lexeme;
-                cout << "]";
+                out_file << "[";
+                out_file << index_node->token.lexeme;
+                out_file << "]";
             }
 
-            cout << "\n";
+            out_file << "\n";
         } else {
-            cout << node->type << ": " << node->token.lexeme << "\n";
+            out_file << node->type << ": " << node->token.lexeme << "\n";
         }
     } else if (node->type == "const") {
         string s;
@@ -90,14 +90,14 @@ void SemanticAnalyzer::dfs_print(ExprNode* node, SymbolTable& symbol_table, int 
             s = node->token.lexeme;
         } break;
         }
-        cout << node->type << ": " << s << " " << node->token.lexeme << "\n";
+        out_file << node->type << ": " << s << " " << node->token.lexeme << "\n";
     } else {
-        cout << node->token.lexeme << "\n";
+        out_file << node->token.lexeme << "\n";
         if (node->child1) {
-            dfs_print(node->child1, symbol_table, depth+1);
+            dfs_print(node->child1, symbol_table, depth+1, out_file);
         }
         if (node->child2) {
-            dfs_print(node->child2, symbol_table, depth+1);
+            dfs_print(node->child2, symbol_table, depth+1, out_file);
         }
     }
 }

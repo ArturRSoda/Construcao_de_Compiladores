@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -32,8 +33,8 @@ struct ExprNode {
 
 class SemanticAnalyzer {
 public:
-    void dfs_print(Node* node, int depth=0);
-    void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth=0);
+    void dfs_print(Node* node, int depth, ofstream& out_file);
+    void dfs_print(ExprNode* node, SymbolTable& symbol_table, int depth, ofstream& out_file);
     vector<ExprNode*> createExprTrees(Node* tree);
     void addTypes(SymbolTable& symbol_table, Node* tree);
     bool checkTypes(SymbolTable& symbol_table, ExprNode* tree);

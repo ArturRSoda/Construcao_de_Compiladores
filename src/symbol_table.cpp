@@ -54,16 +54,27 @@ Symbol* SymbolTable::lookup(string lexeme) {
 
 
 // Exibe a tabela de simbolos formatada
-void SymbolTable::print() {
-    cout << "===================\n";
-    cout << "SYMBOL TABLE" << endl;
-    cout << "===================\n";
-    printf("%-20s | %-20s | %s\n", "lexeme", "TokenType", "occurrences (line, column)");
-    for (auto x : table) {
-        printf("%-20s | %-20s | ", x.first.c_str(), x.second.str_type.c_str());
-        for (auto y: x.second.occorrences) {
-            cout << "(" << y.first << ", " << y.second << ") ";
-        }
-        cout << endl;
+void SymbolTable::print(string out_dir) {
+
+    ofstream out_file;
+    out_file.open(out_dir);
+    if (!out_file.is_open()) {
+        cerr << "Error while opening the output file for SymbolTable!";
     }
+
+    out_file << "===================\n";
+    out_file << "SYMBOL TABLE" << endl;
+    out_file << "===================\n";
+    out_file << left;
+    out_file << setw(20) << "lexeme" << " | " << setw(20) << "TokenType" << " | " << "occurrences (line, column)" << endl;
+    for (auto x : table) {
+        out_file << setw(20) << x.first.c_str() << " | " << setw(20) << x.second.str_type.c_str() << " | ";
+        for (auto y: x.second.occorrences) {
+            out_file << "(" << y.first << ", " << y.second << ") ";
+        }
+        out_file << endl;
+    }
+
+    out_file.close();
+    cout << "Symbol Table was successfully saved on " << out_dir << endl;
 }

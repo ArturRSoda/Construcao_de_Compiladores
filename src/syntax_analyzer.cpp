@@ -364,20 +364,29 @@ void SyntaxAnalyzer::printFollowSets() {
 
 
 // Printa Tabela
-void SyntaxAnalyzer::printParseTable() {
-    cout << "===================\n";
-    cout << "LL(1) Parsing Table" << endl;
-    cout << "===================\n";
+void SyntaxAnalyzer::printParseTable(string out_dir) {
+    ofstream out_file;
+    out_file.open(out_dir);
+    if (!out_file.is_open()) {
+        cerr << "Error while opening the output file for SymbolTable!";
+    }
+
+    out_file << "===================\n";
+    out_file << "LL(1) Parsing Table" << endl;
+    out_file << "===================\n";
     for (auto& row : parseTable) {
         string nonTerminal = row.first;
         for (auto& entry : row.second) {
-            cout << "M[" << nonTerminal << ", " << entry.first << "] = ";
+            out_file << "M[" << nonTerminal << ", " << entry.first << "] = ";
             for (string s : entry.second)
-                cout << s << " ";
-            cout << endl;
+                out_file << s << " ";
+            out_file << endl;
         }
     }
-    cout << endl;
+    out_file << endl;
+
+    out_file.close();
+    cout << "Parse Table was successifully saved on " << out_dir << endl;
 }
 
 // Printa gramatica

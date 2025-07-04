@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <cctype>
+#include <iomanip>
 
 using namespace std;
 
@@ -40,6 +41,6 @@ class LexicalAnalyzer {
     public:
         LexicalAnalyzer(SymbolTable* table, string string_input);
         bool analyze();
-        void print_tokens();
+        void print_tokens(string out_dir);
         vector<Token> tokens;
 };

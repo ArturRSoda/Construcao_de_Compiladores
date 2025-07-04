@@ -6,6 +6,7 @@ CXXFLAGS = -g -std=c++11 -Wall -Isrc/include -Wfatal-errors
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
+OUT_DIR = outputs
 
 # Arquivos fonte e objeto
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
@@ -19,6 +20,7 @@ all: $(TARGET)
 
 # Compila o executável
 $(TARGET): $(OBJS)
+	@mkdir -p $(OUT_DIR)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
@@ -29,7 +31,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 # Limpeza
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(OUT_DIR)
 
 .PHONY: all clean
 

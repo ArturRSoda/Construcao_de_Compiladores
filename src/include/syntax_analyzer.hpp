@@ -10,6 +10,7 @@
 #include <set>
 #include <stack>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -49,7 +50,7 @@ class SyntaxAnalyzer {
         void printGrammar();
         void printFirstSets();
         void printFollowSets();
-        void printParseTable();
+        void printParseTable(string out_dir);
 
         void loadGrammar(string filename);
         set<string> computeFirst(string symbol);
