@@ -19,6 +19,12 @@ struct Node {
 
     Node* parent;
     vector<Node*> children;
+
+    ~Node() {
+        for (Node* child : children) {
+            delete child;
+        }
+    }
 };
 
 class SyntaxAnalyzer {

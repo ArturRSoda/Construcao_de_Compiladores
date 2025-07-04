@@ -365,7 +365,9 @@ void SyntaxAnalyzer::printFollowSets() {
 
 // Printa Tabela
 void SyntaxAnalyzer::printParseTable() {
-    cout << "\n--- LL(1) Parsing Table ---" << endl;
+    cout << "===================\n";
+    cout << "LL(1) Parsing Table" << endl;
+    cout << "===================\n";
     for (auto& row : parseTable) {
         string nonTerminal = row.first;
         for (auto& entry : row.second) {
