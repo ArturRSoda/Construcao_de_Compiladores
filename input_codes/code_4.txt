@@ -24,87 +24,82 @@ def addbook () {
     return;
 }
 
-def borrowbook (string books, string borrowedbooks) {
-    string bookindex;
-    print "enter books index";
-    read bookindex;
-    int r;
-    r = -1;
-
-    string book;
-    book = books[bookindex];
-
-    if (book[3] != "true") {
-        print "book is already borrowed.";
-        return;
-    }
-    
-    book[3] = "false";
-    borrowedbooks[bookindex] = book;
-    
-    print "book borrowed";
-
-    r = 0;
-    return;
-}
-
-def returnbook (string books, string borrowedbooks) {
-    string bookindex;
-    print "enter books index";
-    read bookindex;
-    int r;
-    r = -1;
-
-    string book;
-    book = books[bookindex];
-
-    if (book[3] == "true") {
-        print "book is not borrowed.";
-        return;
-    }
-    
-        
-    book[3] = "true";
-    
-    print "book returned";
-
-    r = 0;
-    return;
-
-}
-
 def main () {
     string books[10][4];
     string borrowedbooks[10][4];
     
     int i;
-    string book;
+    string book[4];
     for (i = 0; i < 10; i = i+1) {
         book = addbook();
         books[i] = book;
     }
 
-    int r;
-    r = borrowbook(books, borrowedbooks);
+    print "do you wish to borrow a book? (y/n)";
+    string choice;
+    read choice;
+    string bookindex;
 
-    r = returnbook(books, borrowedbooks);
-    
-    int i;
-    print "books:";
-    for (i = 0; i < 10; i = i+1) {
-        book = books[i];
-        print book[0];
-        print book[1];
-        print book[2];
-        print book[3];
+    if (choice == "y") {
+        print "enter books index";
+        read bookindex;
+
+        book = books[bookindex];
+
+        if (book[3] != "true") {
+            print "book is already borrowed.";
+        }
+        
+        book[3] = "false";
+        borrowedbooks[bookindex] = book;
+        print "book borrowed";
     }
 
-    print "borrowed books:";
-    for (i = 0; i < 10; i = i+1) {
-        book = borrowedbooks[i];
-        print book[0];
-        print book[1];
-        print book[2];
-        print book[3];
+    print "do you wish to return a book? (y/n)";
+    read choice;
+
+    if (choice == "y") {
+        print "enter books index";
+        read bookindex;
+
+        book = books[bookindex];
+
+        if (book[3] == "true") {
+            print "book is not borrowed.";
+        }
+        
+        book[3] = "true";
+        borrowedbooks[bookindex] = book;
+        print "book returned";
+    }
+
+    
+    print "do you wish to print the books? (y/n)";
+    read choice;
+
+    if (choice == "y") {
+        print "books:";
+        for (i = 0; i < 10; i = i+1) {
+            book = books[i];
+            print book[0];
+            print book[1];
+            print book[2];
+            print book[3];
+        }
+    }
+    
+    
+    print "do you wish to print the borrowed books? (y/n)";
+    read choice;
+
+    if (choice == "y") {
+        print "borrowed books:";
+        for (i = 0; i < 10; i = i+1) {
+            book = borrowedbooks[i];
+            print book[0];
+            print book[1];
+            print book[2];
+            print book[3];
+        }
     }
 }
